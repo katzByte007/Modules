@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings &mdash; Sutek Vision AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/brand.css">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #080d19;
+            color: #e2e8f0;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ─── PAGE LAYOUT ─── */
+        .page-body { padding: 32px 40px; max-width: 1100px; margin: 0 auto; }
+
+        .page-title {
+            font-size: 1.5em; font-weight: 700; color: #f1f5f9;
+            margin-bottom: 4px; letter-spacing: 0.2px;
+        }
+        .page-subtitle { font-size: 0.88em; color: #64748b; margin-bottom: 32px; }
+
+        /* ─── SECTION CARD ─── */
+        .section-card {
+            background: linear-gradient(135deg, rgba(15,23,42,0.95) 0%, rgba(22,33,55,0.95) 100%);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 18px;
+            padding: 28px 32px;
+            margin-bottom: 28px;
+            backdrop-filter: blur(20px);
+        }
+        .section-header {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 24px; padding-bottom: 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .section-icon {
+            width: 38px; height: 38px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1em; flex-shrink: 0;
+        }
+        .icon-net { background: rgba(59,130,246,0.15); color: #60a5fa; }
+        .icon-cam { background: rgba(16,185,129,0.12); color: #34d399; }
+        .section-title { font-size: 1.05em; font-weight: 700; color: #f1f5f9; }
+        .section-desc { font-size: 0.8em; color: #64748b; margin-top: 2px; }
+
+        /* ─── FORM ELEMENTS ─── */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .form-grid-2 { grid-template-columns: 1fr 1fr; }
+        .form-grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .form-grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+        .field { display: flex; flex-direction: column; gap: 6px; }
+        .field.full { grid-column: 1 / -1; }
+        .field label {
+            font-size: 0.72em; font-weight: 600; color: #94a3b8;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .field input, .field select {
+            background: rgba(0,0,0,0.35);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #f1f5f9;
+            padding: 11px 14px;
+            border-radius: 10px;
+            font-size: 0.88em;
+            font-family: inherit;
+            transition: all 0.2s;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        .field select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 36px;
+        }
+        .field input::placeholder { color: #475569; }
+        .field input:focus, .field select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+        }
+        .field input.rtsp-preview {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8em;
+            color: #a5f3fc;
+            background: rgba(6,182,212,0.05);
+            border-color: rgba(6,182,212,0.2);
+            letter-spacing: 0.3px;
+        }
+        .field input.rtsp-preview:focus {
+            border-color: #06b6d4;
+            box-shadow: 0 0 0 3px rgba(6,182,212,0.12);
+        }
+
+        /* ─── BRAND PILLS ─── */
+        .brand-selector { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+        .brand-pill {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 20px; border-radius: 12px; cursor: pointer;
+            border: 2px solid rgba(255,255,255,0.07);
+            background: rgba(255,255,255,0.03);
+            transition: all 0.2s ease; user-select: none;
+            font-size: 0.88em; font-weight: 600; color: #94a3b8;
+        }
+        .brand-pill:hover { border-color: rgba(255,255,255,0.18); color: #e2e8f0; }
+        .brand-pill.active.hik { border-color: #e11d48; background: rgba(225,29,72,0.1); color: #fb7185; }
+        .brand-pill.active.hon { border-color: #f59e0b; background: rgba(245,158,11,0.1); color: #fbbf24; }
+        .brand-pill.active.cpp { border-color: #8b5cf6; background: rgba(139,92,246,0.1); color: #a78bfa; }
+        .brand-pill.active.manual { border-color: #3b82f6; background: rgba(59,130,246,0.1); color: #60a5fa; }
+        .brand-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+        }
+        .dot-hik { background: #e11d48; }
+        .dot-hon { background: #f59e0b; }
+        .dot-cpp { background: #8b5cf6; }
+        .dot-manual { background: #3b82f6; }
+
+        /* ─── RTSP HINT ─── */
+        .rtsp-hint-box {
+            background: rgba(6,182,212,0.05);
+            border: 1px solid rgba(6,182,212,0.15);
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            font-size: 0.78em;
+            color: #7dd3fc;
+            line-height: 1.6;
+        }
+        .rtsp-hint-box code {
+            background: rgba(0,0,0,0.3);
+            padding: 2px 6px; border-radius: 4px;
+            color: #a5f3fc; font-size: 0.95em;
+        }
+
+        /* ─── BUTTONS ─── */
+        .btn {
+            padding: 11px 22px; border: none; border-radius: 10px;
+            font-weight: 600; font-size: 0.88em; font-family: inherit;
+            cursor: pointer; transition: all 0.2s ease; letter-spacing: 0.2px;
+            display: inline-flex; align-items: center; gap: 7px;
+        }
+        .btn-primary { background: #3b82f6; color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.3); }
+        .btn-primary:hover { background: #2563eb; box-shadow: 0 4px 16px rgba(59,130,246,0.4); transform: translateY(-1px); }
+        .btn-primary:disabled { background: #1e3a5f; color: #475569; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-secondary {
+            background: rgba(255,255,255,0.05); color: #94a3b8;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.09); color: #e2e8f0; }
+        .btn-success { background: #059669; color: #fff; box-shadow: 0 2px 8px rgba(5,150,105,0.3); }
+        .btn-success:hover { background: #047857; box-shadow: 0 4px 14px rgba(5,150,105,0.4); transform: translateY(-1px); }
+        .btn-success:disabled { background: #064e3b; color: #475569; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .btn-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+
+        /* ─── SCAN TABLE ─── */
+        .scan-status {
+            font-size: 0.82em; color: #64748b; padding: 6px 0;
+        }
+        .scan-status.scanning { color: #60a5fa; }
+        .scan-status.done { color: #34d399; }
+        .scan-status.error-msg { color: #f87171; }
+
+        .scan-spinner {
+            display: inline-block; width: 14px; height: 14px;
+            border: 2px solid rgba(96,165,250,0.3); border-top-color: #60a5fa;
+            border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 6px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .devices-table-wrap {
+            overflow-x: auto; margin-top: 14px;
+            border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);
+        }
+        .devices-table {
+            width: 100%; border-collapse: collapse; font-size: 0.83em;
+        }
+        .devices-table th {
+            background: rgba(255,255,255,0.04);
+            color: #64748b; font-weight: 600; text-transform: uppercase;
+            font-size: 0.72em; letter-spacing: 0.8px;
+            padding: 10px 14px; text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .devices-table td {
+            padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.04);
+            color: #cbd5e1;
+        }
+        .devices-table tr:last-child td { border-bottom: none; }
+        .devices-table tr:hover td { background: rgba(59,130,246,0.05); }
+        .status-online {
+            display: inline-flex; align-items: center; gap: 5px;
+            color: #34d399; font-size: 0.9em; font-weight: 500;
+        }
+        .status-online::before {
+            content: ''; display: inline-block;
+            width: 6px; height: 6px; border-radius: 50%;
+            background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.7);
+        }
+        .btn-use {
+            padding: 5px 14px; border-radius: 7px; border: 1px solid rgba(59,130,246,0.3);
+            background: rgba(59,130,246,0.1); color: #60a5fa;
+            font-size: 0.8em; font-weight: 600; cursor: pointer;
+            font-family: inherit; transition: all 0.15s;
+        }
+        .btn-use:hover { background: rgba(59,130,246,0.2); border-color: #3b82f6; }
+
+        .subnet-row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 18px; flex-wrap: wrap; }
+        .subnet-row .field { flex: 0 0 240px; }
+
+        /* ─── TOAST ─── */
+        .toast {
+            position: fixed; bottom: 32px; right: 32px; z-index: 9999;
+            background: #1e293b; border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; padding: 14px 20px;
+            font-size: 0.88em; color: #e2e8f0;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            display: flex; align-items: center; gap: 10px;
+            transform: translateY(20px); opacity: 0;
+            transition: all 0.3s ease; pointer-events: none; max-width: 360px;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+        .toast.success { border-color: rgba(16,185,129,0.3); }
+        .toast.error { border-color: rgba(239,68,68,0.3); }
+        .toast-icon { font-size: 1.1em; }
+
+        @media (max-width: 900px) {
+            .topbar { padding: 0 20px; }
+            .page-body { padding: 20px; }
+            .form-grid-3, .form-grid-4 { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 600px) {
+            .form-grid-2, .form-grid-3, .form-grid-4 { grid-template-columns: 1fr; }
+            .brand-selector { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+{% include 'partials/topbar.html' %}
+
+<div class="page-body">
+    <div class="page-title">Settings</div>
+    <div class="page-subtitle">Network camera configuration &amp; IP discovery</div>
+
+    <!-- ═══════════════════════════════════════════════
+         SECTION 1 — Network Configuration / IP Discovery
+    ════════════════════════════════════════════════ -->
+    <div class="section-card">
+        <div class="section-header">
+            <div class="section-icon icon-net">&#128225;</div>
+            <div>
+                <div class="section-title">Network Configuration</div>
+                <div class="section-desc">Scan your local network to discover IP cameras automatically</div>
+            </div>
+        </div>
+
+        <div class="subnet-row">
+            <button class="btn btn-primary" id="scanBtn" onclick="startScan()">
+                &#128225; Scan Network
+            </button>
+        </div>
+
+        <div id="scanStatus" class="scan-status">Scan the current local camera network to detect valid devices automatically.</div>
+
+        <div class="devices-table-wrap" id="devicesWrap" style="display:none;">
+            <table class="devices-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>IP Address</th>
+                        <th>Port</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Select</th>
+                    </tr>
+                </thead>
+                <tbody id="devicesBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         SECTION 2 — Add Camera with Brand Selection
+    ════════════════════════════════════════════════ -->
+    <div class="section-card">
+        <div class="section-header">
+            <div class="section-icon icon-cam">&#128247;</div>
+            <div>
+                <div class="section-title">Add Camera</div>
+                <div class="section-desc">Select your camera brand to auto-generate the correct RTSP URL</div>
+            </div>
+        </div>
+
+        <!-- Brand selector pills -->
+        <div style="margin-bottom:8px;">
+            <div class="field" style="margin-bottom:12px;">
+                <label>Camera Brand</label>
+            </div>
+            <div class="brand-selector">
+                <div class="brand-pill hik" id="pill-hik" onclick="selectBrand('hikvision')">
+                    <span class="brand-dot dot-hik"></span> Hikvision
+                </div>
+                <div class="brand-pill hon" id="pill-hon" onclick="selectBrand('honeywell')">
+                    <span class="brand-dot dot-hon"></span> Honeywell
+                </div>
+                <div class="brand-pill cpp" id="pill-cpp" onclick="selectBrand('cpplus')">
+                    <span class="brand-dot dot-cpp"></span> CP Plus
+                </div>
+                <div class="brand-pill manual active" id="pill-manual" onclick="selectBrand('manual')">
+                    <span class="brand-dot dot-manual"></span> Manual / Other
+                </div>
+            </div>
+        </div>
+
+        <!-- Brand-specific RTSP hint -->
+        <div id="rtspHint" class="rtsp-hint-box" style="display:none;"></div>
+
+        <!-- Camera detail fields -->
+        <div class="form-grid form-grid-4" id="credentialFields">
+            <div class="field">
+                <label>IP Address</label>
+                <input type="text" id="camIp" placeholder="192.168.1.100" oninput="buildRtsp()">
+            </div>
+            <div class="field">
+                <label>Port</label>
+                <input type="number" id="camPort" value="554" min="1" max="65535" oninput="buildRtsp()">
+            </div>
+            <div class="field">
+                <label>Username</label>
+                <input type="text" id="camUser" placeholder="admin" oninput="buildRtsp()">
+            </div>
+            <div class="field">
+                <label>Password</label>
+                <input type="password" id="camPass" placeholder="password" oninput="buildRtsp()">
+            </div>
+        </div>
+
+        <!-- Brand-specific path fields -->
+        <div id="hikFields" style="display:none;">
+            <div class="form-grid form-grid-3">
+                <div class="field">
+                    <label>Channel Number</label>
+                    <input type="number" id="hikChannel" value="1" min="1" max="64" oninput="buildRtsp()">
+                </div>
+                <div class="field">
+                    <label>Stream Type</label>
+                    <select id="hikStream" onchange="buildRtsp()">
+                        <option value="01">Main Stream (01)</option>
+                        <option value="02">Sub Stream (02)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="honFields" style="display:none;">
+            <div class="form-grid form-grid-3">
+                <div class="field">
+                    <label>Channel Number</label>
+                    <input type="number" id="honChannel" value="1" min="1" max="64" oninput="buildRtsp()">
+                </div>
+                <div class="field">
+                    <label>Stream Type</label>
+                    <select id="honStream" onchange="buildRtsp()">
+                        <option value="01">Main Stream (01)</option>
+                        <option value="02">Sub Stream (02)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="cppFields" style="display:none;">
+            <div class="form-grid form-grid-3">
+                <div class="field">
+                    <label>Channel</label>
+                    <input type="number" id="cppChannel" value="1" min="1" max="64" oninput="buildRtsp()">
+                </div>
+                <div class="field">
+                    <label>Sub-type</label>
+                    <select id="cppSubtype" onchange="buildRtsp()">
+                        <option value="0">Main Stream (0)</option>
+                        <option value="1">Sub Stream (1)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- RTSP URL preview -->
+        <div class="form-grid" style="margin-top:16px; margin-bottom:20px;">
+            <div class="field full">
+                <label>RTSP URL</label>
+                <input type="text" id="rtspUrl" class="rtsp-preview"
+                       placeholder="rtsp://username:password@ip:554/path"
+                       oninput="onRtspManualEdit()">
+            </div>
+        </div>
+
+        <!-- Camera name + add button -->
+        <div class="form-grid form-grid-3" style="margin-bottom:0;">
+            <div class="field">
+                <label>Camera Name</label>
+                <input type="text" id="camName" placeholder="e.g. Entrance Camera">
+            </div>
+            <div class="field">
+                <label>Camera ID (optional)</label>
+                <input type="text" id="camId" placeholder="auto-generated">
+            </div>
+        </div>
+
+        <div class="btn-row" style="margin-top:20px;">
+            <button class="btn btn-success" id="addCamBtn" onclick="addCamera()">
+                &#43; Add Camera
+            </button>
+            <button class="btn btn-secondary" onclick="resetForm()">
+                &#10005; Clear
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast">
+    <span class="toast-icon" id="toastIcon"></span>
+    <span id="toastMsg"></span>
+</div>
+
+<script>
+    /* ──────────────────────────────────────────
+       BRAND STATE
+    ────────────────────────────────────────── */
+    let currentBrand = 'manual';
+    let rtspManualOverride = false;
+
+    const BRAND_HINTS = {
+        hikvision: `<b>Hikvision</b> RTSP format:<br>
+            <code>rtsp://user:pass@ip:554/Streaming/Channels/{channel}{stream}</code><br>
+            Example: <code>rtsp://admin:Pass123@192.168.1.64:554/Streaming/Channels/101</code><br>
+            Channel 1 main stream = <code>101</code>, channel 1 sub = <code>102</code>, channel 8 main = <code>801</code>`,
+        honeywell: `<b>Honeywell</b> RTSP format:<br>
+            <code>rtsp://user:pass@ip:554/Streaming/Channels/{channel}{stream}</code><br>
+            Example: <code>rtsp://admin:Pass%40123@192.168.8.5:554/Streaming/Channels/101</code><br>
+            Note: special characters in password must be URL-encoded (e.g. <code>@</code> → <code>%40</code>, <code>#</code> → <code>%23</code>)`,
+        cpplus: `<b>CP Plus</b> RTSP format:<br>
+            <code>rtsp://user:pass@ip:554/cam/realmonitor?channel={ch}&subtype={0|1}</code><br>
+            Example: <code>rtsp://admin:Admin123@192.168.1.10:554/cam/realmonitor?channel=1&subtype=0</code><br>
+            subtype <code>0</code> = main stream, <code>1</code> = sub stream`,
+        manual: ''
+    };
+
+    function selectBrand(brand) {
+        currentBrand = brand;
+        rtspManualOverride = false;
+
+        document.querySelectorAll('.brand-pill').forEach(p => p.classList.remove('active'));
+        document.getElementById('pill-' + (brand === 'hikvision' ? 'hik' : brand === 'honeywell' ? 'hon' : brand === 'cpplus' ? 'cpp' : 'manual')).classList.add('active');
+
+        // Show/hide brand-specific fields
+        document.getElementById('hikFields').style.display = brand === 'hikvision' ? '' : 'none';
+        document.getElementById('honFields').style.display = brand === 'honeywell' ? '' : 'none';
+        document.getElementById('cppFields').style.display = brand === 'cpplus' ? '' : 'none';
+
+        // Hint box
+        const hint = document.getElementById('rtspHint');
+        if (BRAND_HINTS[brand]) {
+            hint.innerHTML = BRAND_HINTS[brand];
+            hint.style.display = '';
+        } else {
+            hint.style.display = 'none';
+        }
+
+        // Default port
+        document.getElementById('camPort').value = '554';
+        buildRtsp();
+    }
+
+    /* ──────────────────────────────────────────
+       RTSP BUILDER
+    ────────────────────────────────────────── */
+    function encodeCredPart(val) {
+        // URL-encode only special chars that break RTSP URLs: @  /  :  #  ?  space
+        return encodeURIComponent(val).replace(/%40/g, '%40');
+    }
+
+    function buildRtsp() {
+        if (rtspManualOverride) return;
+        const ip   = document.getElementById('camIp').value.trim();
+        const port = document.getElementById('camPort').value.trim() || '554';
+        const user = document.getElementById('camUser').value;
+        const pass = document.getElementById('camPass').value;
+        const eu   = encodeCredPart(user);
+        const ep   = encodeCredPart(pass);
+        let url    = '';
+
+        if (!ip) { document.getElementById('rtspUrl').value = ''; return; }
+
+        const base = (user || pass) ? `rtsp://${eu}:${ep}@${ip}:${port}` : `rtsp://${ip}:${port}`;
+
+        if (currentBrand === 'hikvision') {
+            const ch  = document.getElementById('hikChannel').value || '1';
+            const st  = document.getElementById('hikStream').value  || '01';
+            url = `${base}/Streaming/Channels/${ch}${st}`;
+        } else if (currentBrand === 'honeywell') {
+            const ch  = document.getElementById('honChannel').value || '1';
+            const st  = document.getElementById('honStream').value  || '01';
+            url = `${base}/Streaming/Channels/${ch}${st}`;
+        } else if (currentBrand === 'cpplus') {
+            const ch  = document.getElementById('cppChannel').value  || '1';
+            const sub = document.getElementById('cppSubtype').value  || '0';
+            url = `${base}/cam/realmonitor?channel=${ch}&subtype=${sub}`;
+        } else {
+            url = `${base}/stream`;
+        }
+        document.getElementById('rtspUrl').value = url;
+    }
+
+    function onRtspManualEdit() {
+        rtspManualOverride = true;
+    }
+
+    /* ──────────────────────────────────────────
+       NETWORK SCAN
+    ────────────────────────────────────────── */
+    async function startScan() {
+        const scanBtn = document.getElementById('scanBtn');
+        const statusEl = document.getElementById('scanStatus');
+        const wrap = document.getElementById('devicesWrap');
+        const body = document.getElementById('devicesBody');
+
+        scanBtn.disabled = true;
+        statusEl.className = 'scan-status scanning';
+        statusEl.innerHTML = '<span class="scan-spinner"></span> Scanning the current local network for valid cameras, please wait…';
+        wrap.style.display = 'none';
+        body.innerHTML = '';
+
+        try {
+            const r = await fetch('/api/scan_network');
+            const d = await r.json();
+            if (d.status !== 'success') throw new Error(d.message || 'Scan failed');
+
+            const cameras = d.cameras || [];
+            if (cameras.length === 0) {
+                statusEl.className = 'scan-status';
+                statusEl.textContent = `No valid cameras found on ${d.subnet || 'the local network'}.`;
+            } else {
+                statusEl.className = 'scan-status done';
+                statusEl.textContent = `Found ${cameras.length} valid device(s) on ${d.subnet || 'the local network'}`;
+                body.innerHTML = cameras.map((cam, i) => `
+                    <tr>
+                        <td>${i+1}</td>
+                        <td><b>${cam.ip}</b></td>
+                        <td>${cam.port}</td>
+                        <td>${cam.type || 'IP Camera'}</td>
+                        <td><span class="status-online">Online</span></td>
+                        <td>
+                            <button class="btn-use" onclick="useDevice('${cam.ip}','${cam.port}')">
+                                &#10003; Use this IP
+                            </button>
+                        </td>
+                    </tr>`).join('');
+                wrap.style.display = '';
+            }
+        } catch(e) {
+            statusEl.className = 'scan-status error-msg';
+            statusEl.textContent = 'Error: ' + e.message;
+        }
+        scanBtn.disabled = false;
+    }
+
+    function useDevice(ip, port) {
+        document.getElementById('camIp').value   = ip;
+        document.getElementById('camPort').value = port || '554';
+        rtspManualOverride = false;
+        buildRtsp();
+        // Scroll to add-camera section
+        document.getElementById('camUser').focus();
+        showToast('info', `IP ${ip} selected — fill in credentials to build RTSP URL`);
+    }
+
+    /* ──────────────────────────────────────────
+       ADD CAMERA
+    ────────────────────────────────────────── */
+    async function addCamera() {
+        const rtspUrl = document.getElementById('rtspUrl').value.trim();
+        const name    = document.getElementById('camName').value.trim();
+        const camId   = document.getElementById('camId').value.trim();
+
+        if (!rtspUrl) {
+            showToast('error', 'Please build or enter an RTSP URL first'); return;
+        }
+        if (!rtspUrl.toLowerCase().startsWith('rtsp://')) {
+            showToast('error', 'URL must start with rtsp://'); return;
+        }
+
+        const btn = document.getElementById('addCamBtn');
+        btn.disabled = true;
+        btn.textContent = '⏳ Adding…';
+
+        const body = { rtsp_url: rtspUrl };
+        if (name)  body.name      = name;
+        if (camId) body.camera_id = camId;
+
+        try {
+            const res  = await fetch('/api/cameras', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+            showToast('success', `Camera "${data.camera_id}" added successfully!`);
+            resetForm();
+        } catch(e) {
+            showToast('error', 'Failed to add camera: ' + e.message);
+        }
+        btn.disabled = false;
+        btn.innerHTML = '&#43; Add Camera';
+    }
+
+    function resetForm() {
+        ['camIp','camPort','camUser','camPass','camName','camId','rtspUrl',
+         'hikChannel','honChannel','cppChannel'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = id === 'camPort' ? '554' : id === 'hikChannel' || id === 'honChannel' || id === 'cppChannel' ? '1' : '';
+        });
+        rtspManualOverride = false;
+        selectBrand('manual');
+    }
+
+    /* ──────────────────────────────────────────
+       TOAST
+    ────────────────────────────────────────── */
+    let toastTimer = null;
+    function showToast(type, msg) {
+        const t  = document.getElementById('toast');
+        const ic = document.getElementById('toastIcon');
+        const m  = document.getElementById('toastMsg');
+        ic.textContent = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+        m.textContent  = msg;
+        t.className    = `toast show ${type}`;
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => { t.classList.remove('show'); }, 4000);
+    }
+
+</script>
+</body>
+</html>

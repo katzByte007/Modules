@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workforce Monitoring Dashboard</title>
+<link rel="stylesheet" href="/static/brand.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  :root {
+    --bg-deep: #080d19; --bg-panel: rgba(15,23,42,0.95); --bg-card: rgba(15,23,42,0.9); --bg-card2: rgba(30,41,59,0.85);
+    --border: rgba(255,255,255,0.06); --border-bright: rgba(255,255,255,0.1); --accent-blue: #3b82f6; --accent-cyan: #60a5fa;
+    --accent-green: #34d399; --accent-red: #f87171; --accent-orange: #fb923c; --accent-yellow: #fbbf24;
+    --text-primary: #e2e8f0; --text-secondary: #94a3b8; --text-dim: #64748b;
+    --font-display: 'Inter', sans-serif; --font-mono: 'Inter', monospace; --font-body: 'Inter', sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg-deep); color: var(--text-primary); font-family: var(--font-body); font-size: 13px;
+    min-height: 100vh; overflow-x: hidden; -webkit-font-smoothing: antialiased;
+  }
+  .dash-header {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg-panel); border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+  }
+  .dash-header-left h1 { font-size: 1.1em; font-weight: 700; color: #cbd5e1; letter-spacing: 0.5px; }
+  .dash-header-right { display: flex; align-items: center; gap: 14px; color: var(--text-secondary); font-size: 12px; }
+  .header-datetime { text-align: right; line-height: 1.5; }
+  .shift-badge {
+    background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.35); padding: 4px 12px;
+    font-weight: 600; font-size: 11px; letter-spacing: 1px; color: #60a5fa; border-radius: 6px;
+  }
+  .nav-link { color: #94a3b8; font-size: 11px; text-decoration: none; }
+  .nav-link:hover { color: #60a5fa; }
+  .kpi-strip {
+    display: flex; align-items: center; gap: 10px; padding: 12px 24px;
+    background: var(--bg-deep); border-bottom: 1px solid var(--border);
+  }
+  .kpi-card {
+    display: flex; align-items: center; gap: 12px; padding: 8px 18px 8px 14px; border: 1px solid; flex: 1; min-width: 0; position: relative; overflow: hidden;
+  }
+  .kpi-card::before { content:''; position:absolute; inset:0; background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 60%); }
+  .kpi-card.blue  { border-color: rgba(59,130,246,0.3); background: rgba(59,130,246,0.08); }
+  .kpi-card.green { border-color: rgba(52,211,153,0.3); background: rgba(52,211,153,0.08); }
+  .kpi-card.red   { border-color: rgba(248,113,113,0.3); background: rgba(248,113,113,0.08); }
+  .kpi-card.orange{ border-color: rgba(251,146,60,0.3); background: rgba(251,146,60,0.08); }
+  .kpi-num { font-family: var(--font-display); font-size: 38px; font-weight: 700; line-height: 1; min-width: 42px; text-align: center; }
+  .blue  .kpi-num { color: #60a5fa; } .green .kpi-num { color: #34d399; }
+  .red   .kpi-num { color: #f87171; } .orange .kpi-num { color: #fb923c; }
+  .kpi-label { font-family: var(--font-display); font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-secondary); line-height: 1.3; }
+  .sys-health {
+    display: flex; align-items: center; gap: 10px; padding: 8px 16px; border: 1px solid #1b5e20;
+    background: rgba(27,94,32,0.12); flex: 1.2;
+  }
+  .sys-icon { font-size: 26px; }
+  .sys-label { font-family: var(--font-display); font-size: 11px; font-weight: 600; letter-spacing: 1.5px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 4px; }
+  .sys-item { display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
+  .dot { width:8px;height:8px;border-radius:50%; flex-shrink:0; }
+  .dot.green  { background: var(--accent-green); box-shadow:0 0 6px var(--accent-green); }
+  .main-layout { display: grid; grid-template-columns: 1fr 280px; gap: 10px; padding: 12px 24px 24px; }
+  .left-col, .right-col { display: flex; flex-direction: column; gap: 10px; }
+  .section-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .section-title {
+    font-family: var(--font-display); font-size: 15px; font-weight: 600; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--text-primary); display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::before { content:''; width: 3px; height: 16px; background: #3b82f6; border-radius: 2px; }
+  .machine-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .machine-card { border: 1px solid var(--border); background: var(--bg-card); position: relative; overflow: hidden; transition: border-color 0.2s; }
+  .machine-card.active { border-color: rgba(59,130,246,0.35); }
+  .machine-card.warning { border-color: rgba(248,113,113,0.4); }
+  .machine-card.helmet-warn { border-color: rgba(251,146,60,0.4); }
+  .mc-header {
+    display: flex; align-items: center; justify-content: space-between; padding: 5px 8px;
+    background: rgba(0,0,0,0.4); border-bottom: 1px solid var(--border);
+  }
+  .mc-name { font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #60a5fa; }
+  .mc-status-dot { width: 8px; height: 8px; border-radius: 50%; animation: pulse 1.5s infinite; }
+  .mc-status-dot.active { background: var(--accent-green); box-shadow: 0 0 6px var(--accent-green); }
+  .mc-status-dot.warning { background: var(--accent-red); box-shadow: 0 0 6px var(--accent-red); }
+  .mc-status-dot.helmet { background: var(--accent-orange); box-shadow: 0 0 6px var(--accent-orange); }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+  .mc-feed { width: 100%; aspect-ratio: 16/9; background: #000; position: relative; overflow: hidden; }
+  .mc-feed img.stream-frame {
+    position: absolute; inset: 0; z-index: 1;
+    width: 100%; height: 100%; object-fit: contain; display: block; background: #000;
+  }
+  .mc-feed .mc-feed-placeholder {
+    position: absolute; inset: 0; z-index: 2;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-dim); font-size: 10px; background: var(--bg-card2);
+  }
+  .mc-feed .mc-feed-placeholder.hidden { display: none !important; }
+  .mc-overlay-badge { display: none !important; }
+  .mc-cam-id { position:absolute;top:5px;right:5px; z-index:3; font-family:var(--font-mono);font-size:8px; background:rgba(0,0,0,0.6);padding:2px 5px; color:var(--text-dim); }
+  .bottom-row { display: grid; grid-template-columns: 1fr 340px; gap: 10px; }
+  .chart-panel, .alerts-panel, .right-panel { background: var(--bg-panel); border: 1px solid var(--border); padding: 10px 14px; }
+  .chart-legend { display: flex; gap: 14px; align-items: center; font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); margin-bottom: 6px; }
+  .legend-dot { width:10px;height:10px;border-radius:2px;flex-shrink:0; }
+  .chart-wrap { position:relative;height:130px; }
+  .alert-list { display:flex;flex-direction:column;gap:6px; }
+  .alert-item { display: flex; gap: 10px; align-items: flex-start; padding: 7px 10px; background: rgba(0,0,0,0.3); border-left: 3px solid; border-radius: 0 2px 2px 0; }
+  .alert-item.ppe { border-color: var(--accent-orange); }
+  .alert-item.noman { border-color: var(--accent-red); }
+  .alert-title { font-family: var(--font-display); font-size: 11px; font-weight:600; }
+  .alert-sub { font-family: var(--font-mono); font-size: 9px; color: var(--text-secondary); margin-top:2px; }
+  .alert-time { font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); white-space:nowrap; }
+  .view-all-btn { margin-top:8px; width:100%; background: rgba(21,101,192,0.1); border:1px solid var(--border-bright); color: var(--accent-cyan); font-family: var(--font-display); font-size:11px; letter-spacing:2px; padding:5px; cursor:pointer; text-transform:uppercase; }
+  .ppe-helmet-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .ppe-pct { font-family: var(--font-display); font-size: 40px; font-weight: 700; color: var(--accent-yellow); text-shadow: 0 0 20px rgba(255,214,0,0.5); }
+  .ppe-stat-row, .viol-row { display:flex;justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border); font-family:var(--font-mono);font-size:11px; }
+  .mini-bar { height: 6px; background: var(--border); border-radius:3px; margin-top:4px; overflow:hidden; }
+  .mini-bar-fill { height:100%; border-radius:3px; background: linear-gradient(90deg,#ffd600,#ff6d00); }
+  .viol-val { color:var(--accent-red);font-weight:700; }
+  .rc-alert { display:flex;gap:8px;align-items:flex-start; padding:7px 8px; border-left:3px solid; background:rgba(0,0,0,0.3); margin-bottom:6px; }
+  .rc-alert.ppe { border-color:var(--accent-orange); } .rc-alert.noman { border-color:var(--accent-red); }
+  .rc-alert-dot { width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:2px; }
+  .rc-alert.ppe .rc-alert-dot { background:var(--accent-orange); } .rc-alert.noman .rc-alert-dot { background:var(--accent-red); }
+  .live-badge { display:inline-flex;align-items:center;gap:4px; background:rgba(198,40,40,0.2);border:1px solid #c62828; padding:2px 8px; font-family:var(--font-mono);font-size:9px;color:#ef5350; animation:livePulse 1s infinite; }
+  @keyframes livePulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+  .live-dot { width:6px;height:6px;border-radius:50%;background:#ef5350; }
+  .divider { border:none; border-top:1px solid var(--border); margin:10px 0; }
+  .hdr-btn {
+    padding:5px 14px; border-radius:4px; border:1px solid var(--border-bright);
+    background:rgba(21,101,192,0.15); color:var(--accent-cyan); font-family:var(--font-display);
+    font-size:11px; font-weight:600; letter-spacing:1.5px; cursor:pointer; text-transform:uppercase;
+  }
+  .hdr-btn.green { border-color:rgba(52,211,153,0.4); color:#34d399; background:rgba(52,211,153,0.1); }
+  .hdr-btn.red { border-color:rgba(248,113,113,0.4); color:#f87171; background:rgba(248,113,113,0.1); }
+  .setup-bar {
+    margin:12px 24px 0; padding:10px 14px; background:rgba(15,23,42,0.6);
+    border:1px solid var(--border); border-radius:8px; font-size:11px; color:var(--text-secondary); line-height:1.5;
+  }
+  .mc-controls { display: none; }
+  .mc-file-name { font-family:var(--font-mono); font-size:8px; color:var(--text-dim); margin-bottom:5px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mc-ctrl-row { display:flex; gap:4px; align-items:center; flex-wrap:wrap; }
+  .mc-ctrl-row input[type=file] { font-size:8px; color:var(--text-dim); flex:1; min-width:70px; }
+  .mc-btn {
+    padding:3px 8px; font-size:8px; font-weight:600; border-radius:3px; border:1px solid var(--border-bright);
+    background:rgba(21,101,192,0.25); color:var(--accent-cyan); cursor:pointer; white-space:nowrap;
+  }
+  .mc-btn.start { border-color:#2e7d32; color:#66bb6a; background:rgba(46,125,50,0.2); }
+  .mc-btn.stop { border-color:#c62828; color:#ef5350; background:rgba(198,40,40,0.2); }
+  .mc-btn:disabled { opacity:0.45; cursor:not-allowed; }
+  .mc-status-line { font-family:var(--font-mono); font-size:8px; color:var(--text-dim); margin-top:5px; }
+  .mc-status-line .sdot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:4px; }
+  .mc-status-line .sdot.on { background:var(--accent-green); box-shadow:0 0 4px var(--accent-green); }
+  .mc-status-line .sdot.off { background:#546e7a; }
+  .toast { position:fixed; bottom:20px; right:20px; background:#3b82f6; color:#fff; padding:10px 18px;
+    border-radius:8px; font-size:13px; display:none; z-index:999; }
+</style>
+</head>
+<body>
+
+{% include 'partials/topbar.html' %}
+
+<div class="dash-header">
+  <div class="dash-header-left">
+    <h1>Workforce Monitoring Dashboard</h1>
+  </div>
+  <div class="dash-header-right">
+    <a href="/modules" class="nav-link">← MODULES</a>
+    <div class="header-datetime">
+      <div id="live-date"></div>
+      <div id="live-time"></div>
+    </div>
+    <div class="shift-badge" id="shift-label">SHIFT A</div>
+  </div>
+</div>
+
+<div class="kpi-strip">
+  <div class="kpi-card blue"><div class="kpi-num" id="kpi-total">6</div><div class="kpi-label">Total<br>Machines</div></div>
+  <div class="kpi-card green"><div class="kpi-num" id="kpi-manned">0</div><div class="kpi-label">Machines with<br>Manpower</div></div>
+  <div class="kpi-card red"><div class="kpi-num" id="kpi-unmanned">0</div><div class="kpi-label">Machines with<br>No Manpower</div></div>
+  <div class="kpi-card orange"><div class="kpi-num" id="kpi-ppe">0</div><div class="kpi-label">Active PPE<br>Violations</div></div>
+  <div class="sys-health">
+    <div class="sys-icon">🛡️</div>
+    <div>
+      <div class="sys-label">System Health</div>
+      <div class="sys-item"><div class="dot green"></div> <span id="sys-cams">0</span> Cameras Online</div>
+      <div class="sys-item"><div class="dot green"></div> Screen Normal</div>
+    </div>
+  </div>
+</div>
+
+<div class="setup-bar">
+  Live feeds from <strong>data/workforce_videos</strong> — playback only, no AI detection. Dashboard KPIs are auto-filled.
+</div>
+
+<div class="main-layout">
+  <div class="left-col">
+    <div>
+      <div class="section-hdr">
+        <div class="section-title">Machine Live Status <span class="live-badge"><div class="live-dot"></div> LIVE</span></div>
+      </div>
+      <div class="machine-grid" id="machine-grid"></div>
+    </div>
+    <div class="bottom-row">
+      <div class="chart-panel">
+        <div class="section-hdr"><div class="section-title">Manpower Utilization <span style="font-size:10px;color:var(--text-dim);font-family:var(--font-mono)">(Last 16 Hours)</span></div></div>
+        <div class="chart-legend">
+          <div class="legend-dot" style="background:#1e88e5;"></div> Manned Hours
+          <div class="legend-dot" style="background:#ef5350;"></div> No Manpower (Detected)
+        </div>
+        <div class="chart-wrap"><canvas id="util-chart"></canvas></div>
+      </div>
+      <div class="alerts-panel">
+        <div class="section-hdr"><div class="section-title">Alerts &amp; Events</div></div>
+        <div class="alert-list" id="alert-list-left"></div>
+        <button class="view-all-btn" onclick="location.href='/alerts'">View All ▶</button>
+      </div>
+    </div>
+  </div>
+  <div class="right-col">
+    <div class="right-panel">
+      <div class="section-title" style="margin-bottom:10px;">PPE Compliance</div>
+      <div class="ppe-helmet-row">
+        <div style="font-size:36px">⛑️</div>
+        <div><div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim)">HELMET</div><div class="ppe-pct" id="ppe-pct">—</div></div>
+      </div>
+      <div class="mini-bar"><div class="mini-bar-fill" id="ppe-bar" style="width:0%"></div></div>
+      <div style="height:8px"></div>
+      <div class="ppe-stat-row"><span style="color:var(--text-secondary)">SHIFT</span><span id="ppe-shift">0</span></div>
+      <div class="ppe-stat-row" style="border-bottom:none"><span style="color:var(--text-secondary)">TODAY</span><span id="ppe-today">0</span></div>
+    </div>
+    <div class="right-panel">
+      <div class="section-title" style="margin-bottom:10px;">PPE Violations</div>
+      <div class="viol-row"><span style="color:var(--text-secondary)">SHIFT</span><span class="viol-val" id="viol-shift">0</span></div>
+      <div class="viol-row" style="border-bottom:none"><span style="color:var(--text-secondary)">TODAY</span><span class="viol-val" id="viol-today">0</span></div>
+      <div style="margin-top:8px"><canvas id="sparkline" width="250" height="50"></canvas></div>
+    </div>
+    <div class="right-panel">
+      <div class="section-title" style="margin-bottom:10px;">Alerts &amp; Events</div>
+      <div id="alert-list-right"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const MACHINE_IDS = ['MACHINE-01','MACHINE-02','MACHINE-03','MACHINE-04','MACHINE-05','MACHINE-06'];
+const WORKFORCE_VIDEOS = {{ workforce_videos|default({})|tojson }};
+let gridInitialized = false;
+let refreshBusy = false;
+const videoUrls = {};
+Object.assign(videoUrls, Object.fromEntries(
+  Object.entries(WORKFORCE_VIDEOS).map(([id, v]) => [id, v.url])
+));
+
+async function apiFetch(url, options = {}, timeoutMs = 120000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...options, signal: ctrl.signal, credentials: 'same-origin' });
+    clearTimeout(timer);
+    let data = {};
+    try { data = await res.json(); } catch (_) {}
+    return { res, data };
+  } catch (e) {
+    clearTimeout(timer);
+    throw e;
+  }
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('live-date').textContent = now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  document.getElementById('live-time').textContent = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
+  const h = now.getHours();
+  document.getElementById('shift-label').textContent = h >= 6 && h < 14 ? 'SHIFT A' : h >= 14 && h < 22 ? 'SHIFT B' : 'SHIFT C';
+}
+updateClock(); setInterval(updateClock, 1000);
+
+function badgeClass(b) {
+  return {manpower:'manpower', 'no-manpower':'no-manpower', 'helmet-ok':'helmet-ok', 'helmet-viol':'helmet-viol'}[b] || 'manpower';
+}
+function badgeIcon(b) {
+  return {manpower:'👷', 'no-manpower':'⚠️', 'helmet-ok':'⛑️', 'helmet-viol':'🚨'}[b] || '👷';
+}
+function badgeText(m) {
+  if (m.badge==='manpower') return 'MANPOWER PRESENT';
+  if (m.badge==='no-manpower') return 'NO MANPOWER';
+  if (m.badge==='helmet-ok') return `HELMET OK · ${m.helmet_ok||0}`;
+  if (m.badge==='helmet-viol') return 'HELMET VIOLATION';
+  return '';
+}
+function cardClass(m) {
+  if (m.status==='no-manpower') return 'machine-card warning';
+  if (m.status==='helmet-warn') return 'machine-card helmet-warn';
+  return 'machine-card active';
+}
+function dotClass(m) {
+  if (m.status==='no-manpower') return 'mc-status-dot warning';
+  if (m.status==='helmet-warn') return 'mc-status-dot helmet';
+  return 'mc-status-dot active';
+}
+
+function initMachineGrid() {
+  const grid = document.getElementById('machine-grid');
+  grid.innerHTML = MACHINE_IDS.map(id => {
+    const cam = 'CAM-' + id.split('-')[1];
+    const v = WORKFORCE_VIDEOS[id];
+    const streamSrc = v ? v.url : '';
+    const imgTag = streamSrc
+      ? `<img id="stream-${id}" class="stream-frame" alt="${id}" src="${streamSrc}">`
+      : '';
+    return `<div class="machine-card active" id="card-${id}" data-id="${id}">
+      <div class="mc-header"><span class="mc-name">${id}</span><div class="mc-status-dot active" id="dot-${id}"></div></div>
+      <div class="mc-feed" id="feed-${id}">
+        ${imgTag}
+        <div class="mc-cam-id">${cam}</div>
+        <div class="mc-feed-placeholder${v ? ' hidden' : ''}" id="placeholder-${id}">${v ? '' : 'No video file'}</div>
+      </div>
+    </div>`;
+  }).join('');
+  MACHINE_IDS.forEach(id => {
+    const img = document.getElementById('stream-' + id);
+    if (img) {
+      img.addEventListener('load', () => {
+        const ph = document.getElementById('placeholder-' + id);
+        if (ph) ph.classList.add('hidden');
+      });
+      img.addEventListener('error', () => {
+        const ph = document.getElementById('placeholder-' + id);
+        if (ph) {
+          ph.textContent = 'Stream unavailable — restart app';
+          ph.classList.remove('hidden');
+        }
+      });
+    }
+  });
+  gridInitialized = true;
+}
+
+function attachStreamFeed(id, baseUrl) {
+  const img = document.getElementById('stream-' + id);
+  if (!img || !baseUrl) return;
+  if (!img.src || !img.src.includes('/video_feed/workforce/')) {
+    img.src = baseUrl;
+  }
+}
+
+function attachVideoFeed(id, url) {
+  attachStreamFeed(id, url);
+}
+
+function updateMachineCards(machines) {
+  if (!gridInitialized) initMachineGrid();
+  MACHINE_IDS.forEach(id => {
+    const m = (machines||[]).find(x => x.machine_id === id) || {};
+    const card = document.getElementById('card-' + id);
+    const dot = document.getElementById('dot-' + id);
+    if (!card) return;
+    card.className = 'machine-card active';
+    if (dot) dot.className = 'mc-status-dot active';
+    const vurl = m.video_url || videoUrls[id];
+    if (vurl) attachStreamFeed(id, vurl);
+  });
+}
+
+function renderMachines(machines) {
+  updateMachineCards(machines);
+}
+
+function renderAlerts(alerts) {
+  const left = document.getElementById('alert-list-left');
+  const right = document.getElementById('alert-list-right');
+  const items = (alerts||[]).slice(0,4);
+  if (!items.length) {
+    left.innerHTML = '<div style="color:var(--text-dim);font-size:0.8em;padding:8px">No active alerts</div>';
+    right.innerHTML = left.innerHTML;
+    return;
+  }
+  left.innerHTML = items.map(a => `
+    <div class="alert-item ${a.type}">
+      <div style="font-size:16px">${a.type==='ppe'?'🟠':'🔴'}</div>
+      <div style="flex:1"><div class="alert-title">${a.title}</div><div class="alert-sub">${a.sub}</div></div>
+      <div class="alert-time">${a.time}</div>
+    </div>`).join('');
+  right.innerHTML = items.map(a => `
+    <div class="rc-alert ${a.type}">
+      <div class="rc-alert-dot"></div>
+      <div style="flex:1"><div style="font-family:var(--font-display);font-size:11px;font-weight:600">${a.title}</div>
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-secondary)">${a.sub}</div></div>
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim)">${a.time}</div>
+    </div>`).join('');
+}
+
+function drawChart(data) {
+  const canvas = document.getElementById('util-chart');
+  if (!canvas) return;
+  canvas.width = canvas.parentElement.offsetWidth || 480;
+  canvas.height = 130;
+  const ctx = canvas.getContext('2d');
+  const labels = data.labels || [];
+  const data1 = data.manned || [];
+  const data2 = data.unmanned || [];
+  const W=canvas.width, H=canvas.height, pad={l:28,r:10,t:10,b:24}, cW=W-pad.l-pad.r, cH=H-pad.t-pad.b;
+  const barW=cW/Math.max(labels.length,1), gap=barW*0.15;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='rgba(21,101,192,0.15)';
+  for(let i=0;i<=6;i++){
+    const y=pad.t+(cH/6)*i;
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();
+    ctx.fillStyle='rgba(144,164,174,0.6)';ctx.font='9px Share Tech Mono,monospace';
+    ctx.textAlign='right';ctx.fillText(6-i,pad.l-4,y+3);
+  }
+  const maxV = Math.max(...data1,...data2,6);
+  labels.forEach((lbl,i)=>{
+    const x=pad.l+i*barW, bw=(barW-gap*2)*0.45;
+    const h1=(data1[i]/maxV)*cH, h2=(data2[i]/maxV)*cH;
+    ctx.fillStyle='rgba(30,136,229,0.8)'; ctx.fillRect(x+gap,pad.t+cH-h1,bw,h1);
+    ctx.fillStyle='rgba(239,83,80,0.8)'; ctx.fillRect(x+gap+bw+2,pad.t+cH-h2,bw,h2);
+    ctx.fillStyle='rgba(144,164,174,0.7)';ctx.font='8px Share Tech Mono,monospace';
+    ctx.textAlign='center';ctx.fillText(lbl,x+barW/2,H-8);
+  });
+}
+
+function drawSparkline() {
+  const canvas=document.getElementById('sparkline');
+  const ctx=canvas.getContext('2d');
+  const data=[1,2,1,3,2,4,3,2,5,3,2,4,3,5,4,6,3,5,2,4,5,3,2,1];
+  const W=canvas.width,H=canvas.height,max=Math.max(...data);
+  const pts=data.map((v,i)=>({x:i*(W/(data.length-1)),y:H-(v/max)*(H-6)-3}));
+  ctx.clearRect(0,0,W,H);
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'rgba(255,109,0,0.5)');grad.addColorStop(1,'rgba(255,109,0,0)');
+  ctx.beginPath();ctx.moveTo(pts[0].x,H); pts.forEach(p=>ctx.lineTo(p.x,p.y));
+  ctx.lineTo(pts[pts.length-1].x,H);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+  ctx.beginPath();pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+  ctx.strokeStyle='#ff6d00';ctx.lineWidth=1.5;ctx.stroke();
+}
+
+async function refresh() {
+  if (refreshBusy) return;
+  refreshBusy = true;
+  try {
+    const [statusRes, chartRes, ppeRes] = await Promise.all([
+      apiFetch('/api/workforce/status', {}, 15000),
+      apiFetch('/api/workforce/chart', {}, 15000),
+      apiFetch('/api/workforce/ppe-stats', {}, 15000),
+    ]);
+    const status = statusRes.data;
+    const chart = chartRes.data;
+    const ppe = ppeRes.data;
+    document.getElementById('kpi-total').textContent = status.total_machines;
+    document.getElementById('kpi-manned').textContent = status.manned;
+    document.getElementById('kpi-unmanned').textContent = status.unmanned;
+    document.getElementById('kpi-ppe').textContent = status.ppe_violations;
+    document.getElementById('sys-cams').textContent = status.cameras_online + ' Cameras Online';
+    renderMachines(status.machines);
+    renderAlerts(status.alerts);
+    document.getElementById('ppe-pct').textContent = ppe.compliance_pct + '%';
+    document.getElementById('ppe-bar').style.width = ppe.compliance_pct + '%';
+    document.getElementById('ppe-shift').textContent = ppe.shift_violations;
+    document.getElementById('ppe-today').textContent = ppe.today_violations;
+    document.getElementById('viol-shift').textContent = ppe.shift_violations;
+    document.getElementById('viol-today').textContent = ppe.today_violations;
+    drawChart(chart);
+  } catch(e) { console.error('refresh failed', e); }
+  finally { refreshBusy = false; }
+}
+
+initMachineGrid();
+drawSparkline();
+refresh();
+setInterval(refresh, 5000);
+</script>
+{% include 'partials/module_chatbot.html' with context %}
+</body>
+</html>

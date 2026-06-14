@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alerts &mdash; Sutek Vision AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/brand.css">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #080d19; color: #e2e8f0; min-height: 100vh;
+        }
+        .wrap { max-width: 920px; margin: 24px auto; padding: 0 20px 40px; }
+        .title { font-size: 1.35rem; font-weight: 700; margin: 0 0 6px; }
+        .sub { color: #94a3b8; margin: 0 0 20px; font-size: 0.92rem; }
+        .toolbar {
+            display: flex; gap: 10px; align-items: center; margin-bottom: 22px; flex-wrap: wrap;
+        }
+        .toolbar label { color: #94a3b8; font-size: 0.88rem; }
+        select, button {
+            padding: 9px 14px; border-radius: 8px; border: 1px solid #334155;
+            background: #1e293b; color: #e2e8f0; font-family: inherit; font-size: 0.88rem;
+        }
+        button.primary { cursor: pointer; border: 0; background: #2563eb; font-weight: 600; }
+        button.primary:hover { background: #1d4ed8; }
+        .muted { color: #64748b; font-size: 0.85rem; }
+
+        .cards { display: flex; flex-direction: column; gap: 14px; }
+        .card {
+            background: linear-gradient(135deg, rgba(15,23,42,0.95) 0%, rgba(20,30,50,0.9) 100%);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px; overflow: hidden;
+            transition: border-color 0.15s;
+        }
+        .card:hover { border-color: rgba(255,255,255,0.12); }
+        .card.resolved { opacity: 0.72; }
+
+        .ctop {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            padding: 16px 18px 12px; gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .ctl { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .ico, .thumb {
+            width: 34px; height: 34px; border-radius: 9px;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .ico { background: rgba(239,68,68,0.12); color: #f87171; }
+        .thumb {
+            background: rgba(59,130,246,0.1); color: #60a5fa; overflow: hidden;
+        }
+        .thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .ico svg, .thumb svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .atitle { font-weight: 600; font-size: 0.95rem; color: #f1f5f9; line-height: 1.3; }
+
+        .badges { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+        .bx {
+            font-size: 0.62rem; font-weight: 700; letter-spacing: 0.6px;
+            padding: 3px 8px; border-radius: 5px; text-transform: uppercase;
+        }
+        .bx.cr { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.25); }
+        .bx.md { background: rgba(251,191,36,0.12); color: #fde68a; border: 1px solid rgba(251,191,36,0.2); }
+        .bx.in { background: rgba(52,211,153,0.12); color: #6ee7b7; border: 1px solid rgba(52,211,153,0.2); }
+        .bx.as { background: rgba(59,130,246,0.12); color: #93c5fd; border: 1px solid rgba(59,130,246,0.2); }
+        .bx.rv { background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.25); }
+
+        .cbody { padding: 12px 18px 14px; }
+        .cid {
+            display: flex; align-items: center; gap: 7px;
+            font-size: 0.85rem; font-weight: 600; color: #cbd5e1; margin-bottom: 8px;
+        }
+        .cid svg { width: 15px; height: 15px; fill: none; stroke: #64748b; stroke-width: 2; flex-shrink: 0; }
+        .zt { color: #64748b; font-weight: 400; }
+        .amsg {
+            display: flex; align-items: flex-start; gap: 8px;
+            font-size: 0.88rem; color: #fbbf24; font-weight: 500; margin-bottom: 8px;
+        }
+        .amsg svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; flex-shrink: 0; margin-top: 1px; }
+        .ts {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 0.78rem; color: #64748b;
+        }
+        .ts svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+        .cfoot {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 18px; background: rgba(0,0,0,0.18);
+            border-top: 1px solid rgba(255,255,255,0.04); gap: 12px; flex-wrap: wrap;
+        }
+        .arow {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 0.82rem; color: #94a3b8;
+        }
+        .arow svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; }
+        .acts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .nl {
+            display: flex; align-items: center; gap: 5px;
+            font-size: 0.82rem; color: #60a5fa; cursor: pointer; text-decoration: none;
+        }
+        .nl:hover { color: #93c5fd; }
+        .nl svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; }
+        .back, .bres {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 7px 14px; border-radius: 8px; font-size: 0.78rem;
+            font-weight: 700; letter-spacing: 0.4px; cursor: pointer;
+            font-family: inherit; border: none; transition: background 0.15s;
+        }
+        .back {
+            background: rgba(255,255,255,0.06); color: #cbd5e1;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .back:hover:not(:disabled) { background: rgba(255,255,255,0.1); }
+        .back:disabled { opacity: 0.45; cursor: default; }
+        .bres {
+            background: rgba(16,185,129,0.15); color: #34d399;
+            border: 1px solid rgba(16,185,129,0.25);
+        }
+        .bres:hover:not(:disabled) { background: rgba(16,185,129,0.25); }
+        .bres:disabled { opacity: 0.45; cursor: default; }
+        .bres svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+        .empty-state {
+            text-align: center; padding: 60px 20px; color: #64748b;
+            background: rgba(15,23,42,0.5); border-radius: 14px;
+            border: 1px dashed rgba(255,255,255,0.08);
+        }
+        .assign-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+        .assign-row select {
+            padding: 6px 10px; border-radius: 7px; border: 1px solid #334155;
+            background: #1e293b; color: #e2e8f0; font-size: 0.78rem; font-family: inherit; min-width: 160px;
+        }
+        .btn-assign {
+            padding: 6px 12px; border-radius: 7px; border: 0; background: #7c3aed;
+            color: #fff; font-size: 0.75rem; font-weight: 700; cursor: pointer; font-family: inherit;
+        }
+        .btn-assign:disabled { opacity: 0.45; cursor: default; }
+        .bx.asn { background: rgba(124,58,237,0.15); color: #c4b5fd; border: 1px solid rgba(124,58,237,0.25); }
+    </style>
+</head>
+<body>
+    {% include 'partials/topbar.html' %}
+
+    <div class="wrap">
+        <h1 class="title">Alerts</h1>
+        <p class="sub">Snapshot timeline of incidents generated by active AI detections on live streams.</p>
+
+        <div class="toolbar">
+            <label>Detection:</label>
+            <select id="detFilter">
+                <option value="">All</option>
+                <option value="headcount">Headcount</option>
+                <option value="entryexit">Entry/Exit</option>
+                <option value="flapgate">Flapgate</option>
+                <option value="ppe">PPE</option>
+                <option value="fire_smoke">Fire/Smoke</option>
+                <option value="beta_owlv2">Beta OWLv2</option>
+                <option value="beta_florence2_anomaly">Beta Florence-2 Anomaly</option>
+                <option value="beta_qwen_anomaly">Beta Qwen Anomaly</option>
+            </select>
+            <button class="primary" onclick="loadAlerts()">Refresh</button>
+            <span class="muted" id="meta"></span>
+        </div>
+
+        <div class="cards" id="cards">
+            <div class="empty-state">Loading alerts...</div>
+        </div>
+    </div>
+
+    <script>
+        let engineers = [];
+
+        const DET_TITLES = {
+            headcount: 'Headcount Alert',
+            entryexit: 'Entry/Exit Event',
+            flapgate: 'Intrusion Detected',
+            ppe: 'PPE Violation',
+            fire_smoke: 'Fire/Smoke Detected',
+            beta_owlv2: 'Beta Detection Alert',
+            beta_florence2_anomaly: 'Anomaly Detected',
+            beta_qwen_anomaly: 'Anomaly Detected',
+        };
+
+        const DET_ZONES = {
+            headcount: 'Occupancy monitoring zone',
+            entryexit: 'Entry / exit zone',
+            flapgate: 'Restricted gate area',
+            ppe: 'Safety compliance zone',
+            fire_smoke: 'Fire hazard zone',
+            beta_owlv2: 'Beta monitor zone',
+            beta_florence2_anomaly: 'Anomaly monitor zone',
+            beta_qwen_anomaly: 'Anomaly monitor zone',
+        };
+
+        const ICON_INTRUSION = '<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><path d="m12 7-3 7h6l-3-7z"/><path d="m9 14-2 6"/><path d="m15 14 2 6"/><path d="m7 12-3 2"/><path d="m17 12 3 2"/></svg>';
+        const ICON_CAM = '<svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>';
+        const ICON_WARN = '<svg viewBox="0 0 24 24"><path d="m10.29 3.86-8.61 14.97A1 1 0 0 0 2.56 20h17.88a1 1 0 0 0 .88-1.17l-8.61-14.97a1 1 0 0 0-1.72 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+        const ICON_CLOCK = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+        const ICON_USER = '<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+        const ICON_EYE = '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+        const ICON_CHECK = '<svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+
+        function esc(s) {
+            const d = document.createElement('div');
+            d.textContent = s == null ? '' : String(s);
+            return d.innerHTML;
+        }
+
+        function formatTime(ts) {
+            if (!ts) return '—';
+            const d = new Date(ts.includes('T') ? ts : ts.replace(' ', 'T'));
+            if (isNaN(d.getTime())) return ts;
+            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            const pad = n => String(n).padStart(2, '0');
+            const fmt = `${pad(d.getDate())} ${months[d.getMonth()]} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+            const diff = Date.now() - d.getTime();
+            const mins = Math.floor(diff / 60000);
+            let ago = '';
+            if (mins < 1) ago = 'just now';
+            else if (mins < 60) ago = `${mins}m ago`;
+            else if (mins < 1440) ago = `${Math.floor(mins/60)}h ago`;
+            else ago = `${Math.floor(mins/1440)}d ago`;
+            return `${fmt} · ${ago}`;
+        }
+
+        function sevBadge(sev) {
+            const s = (sev || 'medium').toLowerCase();
+            if (s === 'high' || s === 'critical') return '<span class="bx cr">CRITICAL</span>';
+            if (s === 'info' || s === 'low') return '<span class="bx in">INFO</span>';
+            return '<span class="bx md">MEDIUM</span>';
+        }
+
+        function statusBadges(a) {
+            let html = sevBadge(a.severity);
+            const st = (a.status || 'open').toLowerCase();
+            if (st === 'resolved') html += '<span class="bx rv">RESOLVED</span>';
+            else if (st === 'assigned') html += '<span class="bx asn">ASSIGNED</span>';
+            else if (st === 'acknowledged') html += '<span class="bx as">ACKNOWLEDGED</span>';
+            else if (a.assigned_to) html += '<span class="bx as">ASSIGNED</span>';
+            return html;
+        }
+
+        function engineerOptions(selectedId) {
+            if (!engineers.length) return '';
+            return engineers.map(e =>
+                `<option value="${esc(e.id)}"${e.id === selectedId ? ' selected' : ''}>${esc(e.name)}${e.role ? ' · ' + esc(e.role) : ''}</option>`
+            ).join('');
+        }
+
+        function assigneeLabel(a) {
+            if (a.engineer && a.engineer.name) return a.engineer.name;
+            if (a.assigned_to) return a.assigned_to;
+            const st = (a.status || '').toLowerCase();
+            return (st === 'acknowledged' || st === 'resolved' || st === 'assigned') ? '—' : 'Unassigned';
+        }
+
+        function alertTitle(a) {
+            const base = DET_TITLES[a.detection_type] || (a.detection_type || 'Alert').replace(/_/g, ' ');
+            const sev = (a.severity || 'medium').toLowerCase();
+            const sevLabel = (sev === 'high' || sev === 'critical') ? 'Critical' : (sev === 'info' ? 'Info' : 'Medium');
+            return `${base} / ${sevLabel}`;
+        }
+
+        function renderCard(a) {
+            const resolved = (a.status || '').toLowerCase() === 'resolved';
+            const acked = (a.status || '').toLowerCase() === 'acknowledged';
+            const thumb = a.has_snapshot
+                ? `<img src="${esc(a.snapshot_url)}" alt="snapshot" loading="lazy">`
+                : ICON_CAM;
+            const zone = DET_ZONES[a.detection_type] || 'Monitored zone';
+            const assignee = assigneeLabel(a);
+            const msg = a.alert_label ? `[ALARM] ${a.alert_label.toUpperCase()}` : '[ALARM] DETECTION EVENT';
+            const assigned = (a.status || '').toLowerCase() === 'assigned' || !!a.assigned_engineer_id;
+
+            return `
+            <div class="card${resolved ? ' resolved' : ''}" data-id="${a.id}">
+                <div class="ctop">
+                    <div class="ctl">
+                        <div class="ico">${ICON_INTRUSION}</div>
+                        <div class="thumb">${thumb}</div>
+                        <span class="atitle">${esc(alertTitle(a))}</span>
+                    </div>
+                    <div class="badges">${statusBadges(a)}</div>
+                </div>
+                <div class="cbody">
+                    <div class="cid">
+                        ${ICON_CAM}
+                        ${esc(a.camera_id)} <span class="zt">· ${esc(zone)}</span>
+                    </div>
+                    <div class="amsg">
+                        ${ICON_WARN}
+                        ${esc(msg)}
+                    </div>
+                    <div class="ts">
+                        ${ICON_CLOCK}
+                        ${esc(formatTime(a.created_time))}
+                    </div>
+                    <div class="assign-row">
+                        <select id="eng-${a.id}" ${resolved ? 'disabled' : ''}>
+                            <option value="">${engineers.length ? 'Assign engineer…' : 'Add engineers in System → Local configuration'}</option>
+                            ${engineerOptions(a.assigned_engineer_id || '')}
+                        </select>
+                        <button class="btn-assign" onclick="assignAlert(${a.id})" ${resolved || !engineers.length ? 'disabled' : ''}>Assign</button>
+                    </div>
+                </div>
+                <div class="cfoot">
+                    <span class="arow">
+                        ${ICON_USER}
+                        ${esc(assignee)}
+                    </span>
+                    <div class="acts">
+                        <a class="nl" href="/" title="Open camera live feed">${ICON_EYE} Open Feed ›</a>
+                        <a class="nl" href="/alerts/${a.id}" title="Investigate incident">${ICON_EYE} Investigate ›</a>
+                        <button class="back" onclick="ackAlert(${a.id})" ${acked || resolved ? 'disabled' : ''}>ACK</button>
+                        <button class="bres" onclick="resolveAlert(${a.id})" ${resolved ? 'disabled' : ''}>
+                            ${ICON_CHECK} RESOLVE
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        async function loadEngineers() {
+            try {
+                const res = await fetch('/api/engineers');
+                const data = await res.json();
+                engineers = data.engineers || [];
+            } catch (e) { engineers = []; }
+        }
+
+        async function loadAlerts() {
+            await loadEngineers();
+            const f = document.getElementById('detFilter').value;
+            const q = f ? ('?detection_type=' + encodeURIComponent(f)) : '';
+            const cards = document.getElementById('cards');
+            cards.innerHTML = '<div class="empty-state">Loading alerts...</div>';
+            try {
+                const res = await fetch('/api/alerts' + q);
+                const data = await res.json();
+                const arr = data.alerts || [];
+                document.getElementById('meta').textContent = arr.length + ' alert(s)';
+                if (!arr.length) {
+                    cards.innerHTML = '<div class="empty-state">No alerts yet. Enable AI detections to start recording incidents.</div>';
+                    return;
+                }
+                cards.innerHTML = arr.map(renderCard).join('');
+            } catch (e) {
+                cards.innerHTML = '<div class="empty-state">Failed to load alerts: ' + esc(e.message) + '</div>';
+            }
+        }
+
+        async function assignAlert(id) {
+            const sel = document.getElementById('eng-' + id);
+            const engineer_id = sel ? sel.value : '';
+            if (!engineer_id) { alert('Select an engineer first'); return; }
+            try {
+                const res = await fetch('/api/alerts/' + id + '/assign', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ engineer_id })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Assign failed');
+                loadAlerts();
+            } catch (e) { alert(e.message); }
+        }
+
+        async function ackAlert(id) {
+            try {
+                const res = await fetch('/api/alerts/' + id + '/ack', { method: 'POST' });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'ACK failed');
+                loadAlerts();
+            } catch (e) { alert(e.message); }
+        }
+
+        async function resolveAlert(id) {
+            try {
+                const res = await fetch('/api/alerts/' + id + '/resolve', { method: 'POST' });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Resolve failed');
+                loadAlerts();
+            } catch (e) { alert(e.message); }
+        }
+
+        loadAlerts();
+        setInterval(loadAlerts, 20000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incident Investigation — Sutek Vision AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/brand.css">
+    <style>
+        :root {
+            --bg0: #03050a;
+            --bg1: #0a0f1a;
+            --surface: rgba(10, 16, 32, 0.85);
+            --surface2: rgba(4, 8, 18, 0.92);
+            --stroke: rgba(100, 130, 190, 0.22);
+            --stroke2: rgba(255, 255, 255, 0.07);
+            --text: #e8ecf4;
+            --muted: #8b9ab8;
+            --accent: #3b7dd6;
+            --accent-deep: #1e4a8c;
+            --accent2: #5ee7df;
+            --lux: #c9a554;
+            --danger: #f87171;
+            --radius: 18px;
+            --shadow: 0 32px 90px rgba(0, 0, 0, 0.55);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(ellipse 1000px 560px at 20% -15%, rgba(42, 95, 200, 0.16), transparent 55%),
+                radial-gradient(ellipse 800px 420px at 85% 5%, rgba(200, 165, 90, 0.07), transparent 50%),
+                radial-gradient(ellipse 600px 360px at 50% 100%, rgba(15, 80, 180, 0.06), transparent 45%),
+                linear-gradient(188deg, var(--bg0) 0%, var(--bg1) 55%, #0c1526 100%);
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+            opacity: 1;
+            z-index: 0;
+        }
+        .shell { position: relative; z-index: 1; max-width: 1460px; margin: 0 auto; padding: 24px 26px 56px; }
+        .top {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 26px;
+        }
+        .topbar-lite {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 0 28px;
+            height: 76px;
+            background: #000000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+        }
+        .topbar-lite::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(201, 165, 84, 0.25), rgba(94, 200, 255, 0.2), transparent);
+            opacity: 0.85;
+            pointer-events: none;
+        }
+        .topbar-lite .brand {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .topbar-lite .brand img {
+            height: 48px;
+            width: auto;
+            max-width: 210px;
+            min-width: 130px;
+            display: block;
+            object-fit: contain;
+            object-position: left center;
+        }
+        .topbar-lite .brand-sep {
+            width: 1.5px;
+            height: 36px;
+            background: linear-gradient(180deg, transparent, rgba(148, 163, 184, 0.45), transparent);
+        }
+        .topbar-lite .brand-product {
+            font-size: 1.1rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #f1f5f9;
+        }
+        .topbar-lite nav { display: flex; gap: 6px; flex-wrap: wrap; }
+        .topbar-lite nav a {
+            text-decoration: none;
+            color: #8b9bb8;
+            padding: 9px 16px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.8125rem;
+            letter-spacing: 0.02em;
+            transition: background 0.18s, color 0.18s;
+        }
+        .topbar-lite nav a:hover { background: rgba(255, 255, 255, 0.06); color: #e8eef8; }
+        .topbar-lite nav a.active {
+            color: #f8fafc;
+            background: linear-gradient(135deg, rgba(42, 95, 200, 0.35), rgba(15, 25, 48, 0.95));
+            box-shadow: inset 0 0 0 1px rgba(100, 160, 255, 0.18);
+        }
+        .hero {
+            flex: 1;
+            min-width: 280px;
+        }
+        .hero-eyebrow {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: rgba(201, 165, 84, 0.85);
+            margin-bottom: 10px;
+        }
+        .hero h1 {
+            margin: 0 0 10px;
+            font-size: clamp(1.5rem, 2.4vw, 1.85rem);
+            font-weight: 800;
+            letter-spacing: -0.035em;
+            color: #f4f7fc;
+            background: linear-gradient(120deg, #ffffff 0%, #b8c9e8 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+        @supports (-webkit-background-clip: text) or (background-clip: text) {
+            .hero h1 { color: transparent; }
+        }
+        .hero p { margin: 0; color: var(--muted); font-size: 0.9375rem; line-height: 1.55; max-width: 52ch; }
+        .id-pill {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            padding: 10px 18px;
+            border-radius: 999px;
+            background: linear-gradient(145deg, rgba(12, 20, 40, 0.95), rgba(8, 14, 28, 0.9));
+            border: 1px solid rgba(120, 160, 220, 0.2);
+            color: #a8b8d8;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        }
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+            gap: 22px;
+            align-items: start;
+        }
+        @media (max-width: 1100px) {
+            .layout { grid-template-columns: 1fr; }
+        }
+        .panel {
+            position: relative;
+            background: var(--surface);
+            border: 1px solid rgba(115, 145, 190, 0.18);
+            border-radius: var(--radius);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            padding: 22px 24px;
+            box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        .panel-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .panel-head h2 {
+            margin: 0;
+            font-size: 0.78rem;
+            font-weight: 800;
+            color: #b8c8e8;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+        .panel-head span { font-size: 0.78rem; color: var(--muted); font-weight: 500; line-height: 1.4; }
+        .snap-wrap {
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: #020617;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+        .snap {
+            width: 100%;
+            display: block;
+            max-height: 420px;
+            object-fit: contain;
+        }
+        .meta {
+            margin-top: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        @media (max-width: 640px) {
+            .controls { grid-template-columns: 1fr; }
+        }
+        select, textarea, input[type="text"] {
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid var(--stroke2);
+            background: var(--surface2);
+            color: var(--text);
+            padding: 11px 14px;
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+        select:focus, textarea:focus {
+            outline: none;
+            border-color: rgba(100, 160, 220, 0.45);
+            box-shadow: 0 0 0 3px rgba(59, 125, 214, 0.15);
+        }
+        textarea { min-height: 100px; resize: vertical; line-height: 1.45; }
+        .odd-area { min-height: 76px; }
+        .btn-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        button {
+            border: none;
+            border-radius: 12px;
+            padding: 10px 18px;
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+        }
+        button:active { transform: scale(0.98); }
+        .btn-primary {
+            background: linear-gradient(145deg, #3b7dd6, var(--accent-deep));
+            color: #fff;
+            box-shadow: 0 8px 28px rgba(30, 74, 140, 0.45);
+        }
+        .btn-primary:hover { box-shadow: 0 10px 32px rgba(30, 74, 140, 0.55); }
+        .btn-ghost {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            border: 1px solid var(--stroke2);
+        }
+        .btn-muted { background: linear-gradient(180deg, #3d4a63, #2d3748); color: #f8fafc; border: 1px solid rgba(255, 255, 255, 0.06); }
+        .btn-save { background: linear-gradient(145deg, #0d8ec9, #04648f); color: #fff; box-shadow: 0 8px 24px rgba(4, 100, 143, 0.4); }
+        .btn-exit { background: rgba(248, 113, 113, 0.1); color: var(--danger); border: 1px solid rgba(248, 113, 113, 0.32); }
+        .label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #8a9ab8;
+            margin-bottom: 7px;
+        }
+        .file-hint { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+        .chat-full { grid-column: 1 / -1; }
+        .chat-log {
+            min-height: 300px;
+            max-height: 460px;
+            overflow: auto;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: linear-gradient(180deg, rgba(2, 6, 18, 0.75), rgba(4, 10, 24, 0.85));
+            padding: 16px 18px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+        .msg {
+            max-width: 88%;
+            padding: 12px 16px;
+            margin: 10px 0;
+            border-radius: 14px;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+        }
+        .msg.me {
+            margin-left: auto;
+            background: linear-gradient(135deg, rgba(45, 100, 200, 0.35), rgba(15, 40, 80, 0.5));
+            border: 1px solid rgba(100, 160, 255, 0.22);
+        }
+        .msg.ai {
+            margin-right: auto;
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid var(--stroke2);
+        }
+        .status {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: var(--muted);
+            min-height: 20px;
+        }
+        .divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent); margin: 18px 0; }
+    </style>
+</head>
+<body>
+    {% include 'partials/topbar.html' %}
+
+    <div class="shell">
+        <div class="top">
+            <div class="hero">
+                <div class="hero-eyebrow">Incident intelligence</div>
+                <h1>Investigation workspace</h1>
+                <p>Evidence-first analysis, ODD alignment, and grounded multilingual Q&amp;A.</p>
+            </div>
+            <div class="id-pill">Incident <span id="incidentId">{{ alert_id }}</span></div>
+        </div>
+
+        <div class="layout">
+            <div class="panel">
+                <div class="panel-head">
+                    <div>
+                        <h2>Incident snapshot</h2>
+                        <span>Static evidence frame</span>
+                    </div>
+                </div>
+                <div class="snap-wrap">
+                    <img id="snap" class="snap" alt="Incident snapshot">
+                </div>
+                <div id="meta" class="meta"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-head">
+                    <div>
+                        <h2>Analysis</h2>
+                        <span>Detection commentary &amp; corrective guidance</span>
+                    </div>
+                </div>
+                <div class="controls">
+                    <select id="analysisLanguage" title="Analysis language">
+                        <option>English</option><option>Hindi</option><option>Tamil</option><option>Telugu</option><option>Kannada</option>
+                        <option>Malayalam</option><option>Marathi</option><option>Bengali</option><option>Gujarati</option><option>Spanish</option>
+                        <option>French</option><option>German</option><option>Arabic</option><option>Japanese</option><option>Korean</option><option>Chinese</option>
+                    </select>
+                    <select id="mode" title="Read-out mode for analysis">
+                        <option value="text">Text only</option>
+                        <option value="voice">Voice + text</option>
+                    </select>
+                    <button type="button" class="btn-primary" onclick="runInvestigation('Regenerate incident analysis in selected language.')">Generate</button>
+                </div>
+                <div class="label">ODD document (optional)</div>
+                <div class="btn-row" style="margin-bottom:8px;">
+                    <input type="file" id="oddFile" accept=".txt,.md,.pdf,.csv,.log,text/plain,application/pdf" style="display:none">
+                    <button type="button" class="btn-ghost" onclick="document.getElementById('oddFile').click()">Upload file</button>
+                    <span class="file-hint" id="oddFileLabel"></span>
+                </div>
+                <textarea id="oddContext" class="odd-area" placeholder="Paste ODD text or upload .txt / .md / .pdf (constraints, expected flow, violations to watch)..."></textarea>
+                <div class="file-hint">Files are copied under <code style="color:#94a8cc">data/odd_uploads/&lt;alert_id&gt;/</code> on the server.</div>
+                <div class="divider"></div>
+                <div class="label">Regular detection &amp; commentary</div>
+                <textarea id="commentary" placeholder="Generated commentary…"></textarea>
+                <div class="label" style="margin-top:12px;">Root cause &amp; corrective recommendations</div>
+                <textarea id="rootcause" placeholder="Root cause, next actions, ODD deviations…"></textarea>
+            </div>
+
+            <div class="panel chat-full">
+                <div class="panel-head">
+                    <div>
+                        <h2>Investigation chatbot</h2>
+                        <span>Multilingual · answers only your question · server TTS when available</span>
+                    </div>
+                </div>
+                <div class="controls" style="grid-template-columns: 1fr 1fr;">
+                    <select id="language" title="Chat language">
+                        <option>English</option><option>Hindi</option><option>Tamil</option><option>Telugu</option><option>Kannada</option>
+                        <option>Malayalam</option><option>Marathi</option><option>Bengali</option><option>Gujarati</option><option>Spanish</option>
+                        <option>French</option><option>German</option><option>Arabic</option><option>Japanese</option><option>Korean</option><option>Chinese</option>
+                    </select>
+                    <select id="chatMode">
+                        <option value="text">Text</option>
+                        <option value="voice">Voice + text</option>
+                    </select>
+                </div>
+                <div class="chat-log" id="chatLog"></div>
+                <div class="label" style="margin-top:12px;">Your message</div>
+                <textarea id="chatInput" placeholder="Ask a precise question about what is visible in the snapshot…" style="min-height:48px;"></textarea>
+                <div class="btn-row" style="margin-top:10px;">
+                    <button type="button" class="btn-primary" onclick="sendChat()">Send</button>
+                    <button type="button" class="btn-muted" onclick="startVoice()">Voice input</button>
+                    <button type="button" class="btn-save" onclick="saveWorkspace()">Save</button>
+                    <button type="button" class="btn-exit" onclick="exitAndUnload()">Exit &amp; unload model</button>
+                </div>
+                <div class="status" id="qwenStatus"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const alertId = Number(document.getElementById('incidentId').textContent.trim());
+        let analysisInFlight = false;
+        let chatInFlight = false;
+        let _ttsAudio = null;
+        let chatHistory = [];
+
+        const langMap = {
+            English: 'en-US', Hindi: 'hi-IN', Tamil: 'ta-IN', Telugu: 'te-IN', Kannada: 'kn-IN',
+            Malayalam: 'ml-IN', Marathi: 'mr-IN', Bengali: 'bn-IN', Gujarati: 'gu-IN',
+            Spanish: 'es-ES', French: 'fr-FR', German: 'de-DE', Arabic: 'ar-SA',
+            Japanese: 'ja-JP', Korean: 'ko-KR', Chinese: 'zh-CN'
+        };
+
+        function addMsg(text, who) {
+            const log = document.getElementById('chatLog');
+            const d = document.createElement('div');
+            d.className = 'msg ' + (who === 'me' ? 'me' : 'ai');
+            d.textContent = text;
+            log.appendChild(d);
+            log.scrollTop = log.scrollHeight;
+            chatHistory.push({ who: who === 'me' ? 'me' : 'ai', text: String(text || '') });
+        }
+
+        function renderChatHistory(items) {
+            const log = document.getElementById('chatLog');
+            log.innerHTML = '';
+            chatHistory = [];
+            (Array.isArray(items) ? items : []).forEach(function (entry) {
+                const who = entry && entry.who === 'me' ? 'me' : 'ai';
+                const txt = entry && typeof entry.text === 'string' ? entry.text : '';
+                if (!txt) return;
+                addMsg(txt, who);
+            });
+        }
+
+        function pickVoiceForLanguage(langName) {
+            if (!('speechSynthesis' in window)) return null;
+            const voices = speechSynthesis.getVoices() || [];
+            const code = (langMap[langName] || 'en-US').toLowerCase();
+            const base = code.split('-')[0];
+            return voices.find(v => (v.lang || '').toLowerCase().startsWith(base)) || null;
+        }
+
+        async function speakText(text, langName) {
+            if (!text) return;
+            if (_ttsAudio) {
+                try { _ttsAudio.pause(); } catch (e) {}
+                _ttsAudio = null;
+            }
+            try {
+                const res = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text.slice(0, 8000), language: langName })
+                });
+                if (res.ok) {
+                    const blob = await res.blob();
+                    const url = URL.createObjectURL(blob);
+                    _ttsAudio = new Audio(url);
+                    _ttsAudio.onended = () => URL.revokeObjectURL(url);
+                    await _ttsAudio.play();
+                    return;
+                }
+            } catch (e) {
+                console.warn('Server TTS unavailable, using browser fallback', e);
+            }
+            if (!('speechSynthesis' in window)) return;
+            speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = langMap[langName] || 'en-US';
+            const v = pickVoiceForLanguage(langName);
+            if (v) u.voice = v;
+            speechSynthesis.speak(u);
+        }
+
+        document.getElementById('oddFile').addEventListener('change', async function () {
+            const f = this.files && this.files[0];
+            if (!f) return;
+            const fd = new FormData();
+            fd.append('file', f);
+            document.getElementById('qwenStatus').textContent = 'Uploading ODD…';
+            try {
+                const res = await fetch('/api/alerts/' + alertId + '/odd_upload', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Upload failed');
+                document.getElementById('oddContext').value = data.text || '';
+                document.getElementById('oddFileLabel').textContent = data.filename ? 'Loaded: ' + data.filename : '';
+                document.getElementById('qwenStatus').textContent = 'ODD text loaded (' + (data.chars || 0) + ' chars).';
+            } catch (e) {
+                document.getElementById('qwenStatus').textContent = e.message || 'ODD upload failed';
+            }
+            this.value = '';
+        });
+
+        async function loadIncident() {
+            const res = await fetch('/api/alerts/' + alertId);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to load incident');
+            document.getElementById('snap').src = data.snapshot_url + '?_=' + Date.now();
+            document.getElementById('meta').textContent =
+                (data.created_time || '') + ' | Camera: ' + (data.camera_id || '') + ' | Detection: ' + (data.detection_type || '') + ' | Severity: ' + (data.severity || '');
+            document.getElementById('analysisLanguage').value = document.getElementById('language').value;
+            document.getElementById('commentary').value = '';
+            document.getElementById('rootcause').value = '';
+            document.getElementById('oddContext').value = '';
+            document.getElementById('chatInput').value = '';
+            renderChatHistory([]);
+            try {
+                const sres = await fetch('/api/alerts/' + alertId + '/workspace');
+                const saved = await sres.json();
+                if (sres.ok && saved && saved.saved) {
+                    document.getElementById('analysisLanguage').value = saved.analysis_language || document.getElementById('analysisLanguage').value;
+                    document.getElementById('mode').value = saved.analysis_mode || document.getElementById('mode').value;
+                    document.getElementById('language').value = saved.chat_language || document.getElementById('language').value;
+                    document.getElementById('chatMode').value = saved.chat_mode || document.getElementById('chatMode').value;
+                    document.getElementById('commentary').value = saved.commentary || '';
+                    document.getElementById('rootcause').value = saved.rootcause || '';
+                    document.getElementById('oddContext').value = saved.odd_context || '';
+                    renderChatHistory(saved.chat_history || []);
+                    document.getElementById('qwenStatus').textContent = 'Loaded saved workspace for this alert.';
+                    return;
+                }
+            } catch (e) {}
+            document.getElementById('qwenStatus').textContent = 'Ready. Select language/mode and click Generate.';
+        }
+
+        async function saveWorkspace() {
+            if (analysisInFlight || chatInFlight) {
+                document.getElementById('qwenStatus').textContent = 'Please wait for current generation to finish before saving.';
+                return;
+            }
+            const payload = {
+                analysis_language: document.getElementById('analysisLanguage').value,
+                analysis_mode: document.getElementById('mode').value,
+                chat_language: document.getElementById('language').value,
+                chat_mode: document.getElementById('chatMode').value,
+                commentary: document.getElementById('commentary').value || '',
+                rootcause: document.getElementById('rootcause').value || '',
+                odd_context: document.getElementById('oddContext').value || '',
+                chat_history: chatHistory.slice(-200)
+            };
+            document.getElementById('qwenStatus').textContent = 'Saving workspace...';
+            try {
+                const res = await fetch('/api/alerts/' + alertId + '/workspace', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Save failed');
+                document.getElementById('qwenStatus').textContent = 'Workspace saved for this alert.';
+            } catch (e) {
+                document.getElementById('qwenStatus').textContent = 'Save failed: ' + e.message;
+            }
+        }
+
+        async function runInvestigation(message) {
+            if (analysisInFlight) return;
+            analysisInFlight = true;
+            const language = document.getElementById('analysisLanguage').value;
+            const mode = document.getElementById('mode').value;
+            const odd_context = document.getElementById('oddContext').value || '';
+            document.getElementById('qwenStatus').textContent = 'Generating analysis…';
+            try {
+                const res = await fetch('/api/alerts/' + alertId + '/investigate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ language, mode, message, odd_context })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Investigation failed');
+                document.getElementById('commentary').value = data.regular_commentary || data.full_response || '';
+                const rec = data.recommendations || '';
+                const root = data.root_cause || '';
+                document.getElementById('rootcause').value = (root + (rec ? '\n\n' + rec : '')).trim();
+                document.getElementById('qwenStatus').textContent = 'Analysis complete.';
+                if (mode === 'voice') {
+                    const toSpeak = (data.recommendations || data.root_cause || data.regular_commentary || '').trim();
+                    await speakText(toSpeak, language);
+                }
+            } catch (e) {
+                document.getElementById('qwenStatus').textContent = 'Analysis failed: ' + e.message;
+            } finally {
+                analysisInFlight = false;
+            }
+        }
+
+        async function sendChat() {
+            if (chatInFlight) return;
+            const input = document.getElementById('chatInput');
+            const message = (input.value || '').trim();
+            if (!message) return;
+            input.value = '';
+            addMsg(message, 'me');
+            chatInFlight = true;
+            const language = document.getElementById('language').value;
+            const mode = document.getElementById('chatMode').value;
+            const odd_context = document.getElementById('oddContext').value || '';
+            document.getElementById('qwenStatus').textContent = 'Generating answer…';
+            try {
+                const res = await fetch('/api/alerts/' + alertId + '/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ language, mode, message, odd_context })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Chat failed');
+                const txt = (data.full_response || '').trim();
+                addMsg(txt || 'No answer generated.', 'ai');
+                document.getElementById('qwenStatus').textContent = 'Response ready.';
+                if (mode === 'voice') await speakText(txt, language);
+            } catch (e) {
+                addMsg('Chat failed: ' + e.message, 'ai');
+                document.getElementById('qwenStatus').textContent = e.message || 'Chat error';
+            } finally {
+                chatInFlight = false;
+            }
+        }
+
+        function startVoice() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                alert('Speech recognition is not supported in this browser.');
+                return;
+            }
+            const Cls = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const rec = new Cls();
+            rec.lang = langMap[document.getElementById('language').value] || 'en-US';
+            rec.interimResults = false;
+            rec.maxAlternatives = 1;
+            rec.onresult = function (event) {
+                document.getElementById('chatInput').value = event.results[0][0].transcript || '';
+            };
+            rec.start();
+        }
+
+        async function exitAndUnload() {
+            try { await fetch('/api/vlm/qwen/unload', { method: 'POST' }); } catch (e) {}
+            window.location.href = '/alerts';
+        }
+
+        loadIncident().catch(function (e) {
+            document.getElementById('qwenStatus').textContent = 'Load failed: ' + e.message;
+        });
+
+        document.getElementById('analysisLanguage').addEventListener('change', function () {
+            runInvestigation('Regenerate incident analysis in selected language.');
+        });
+        document.getElementById('language').addEventListener('change', function () {
+            document.getElementById('analysisLanguage').value = this.value;
+        });
+    </script>
+</body>
+</html>

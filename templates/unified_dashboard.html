@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard &mdash; Sutek Vision AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/brand.css">
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #080d19;
+            color: #e2e8f0;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+        .page-body { padding: 28px 40px; max-width: 1600px; margin: 0 auto; }
+
+        /* ─── TABS ─── */
+        .tabs {
+            display: flex; gap: 2px; margin-bottom: 28px;
+            background: rgba(15,23,42,0.6); border-radius: 12px; padding: 4px;
+            border: 1px solid rgba(255,255,255,0.04); width: fit-content;
+        }
+        .tab {
+            padding: 10px 28px; border-radius: 10px; cursor: pointer;
+            font-weight: 600; font-size: 0.88em; color: #64748b;
+            transition: all 0.2s ease; border: none; background: transparent;
+            font-family: inherit; letter-spacing: 0.2px;
+        }
+        .tab:hover { color: #94a3b8; }
+        .tab.active { background: #3b82f6; color: #ffffff; box-shadow: 0 2px 8px rgba(59,130,246,0.3); }
+        .tab.active-hc { background: #3b82f6; color: #ffffff; box-shadow: 0 2px 8px rgba(59,130,246,0.3); }
+        .tab.active-ee { background: #8b5cf6; color: #ffffff; box-shadow: 0 2px 8px rgba(139,92,246,0.3); }
+        .tab.active-fg { background: #f97316; color: #ffffff; box-shadow: 0 2px 8px rgba(249,115,22,0.3); }
+        .tab.active-ppe { background: #0d9488; color: #ffffff; box-shadow: 0 2px 8px rgba(13,148,136,0.3); }
+
+        .section-bar {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;
+        }
+        .section-bar h2 { font-size: 1.1em; font-weight: 700; color: #cbd5e1; }
+        .btn-refresh {
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            color: #94a3b8; padding: 8px 20px; border-radius: 8px;
+            cursor: pointer; font-weight: 500; font-size: 0.82em; font-family: inherit;
+            transition: all 0.15s;
+        }
+        .btn-refresh:hover { background: rgba(255,255,255,0.08); color: #e2e8f0; }
+
+        /* ─── SUMMARY CARDS ─── */
+        .summary-row {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px; margin-bottom: 32px;
+        }
+        .s-card {
+            background: linear-gradient(135deg, rgba(15,23,42,0.9) 0%, rgba(30,41,59,0.8) 100%);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 14px;
+            padding: 22px 20px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .s-card:hover { border-color: rgba(255,255,255,0.1); transform: translateY(-1px); }
+        .s-card .s-label {
+            font-size: 0.68em; font-weight: 600; color: #64748b;
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;
+        }
+        .s-card .s-value { font-size: 2.2em; font-weight: 800; font-variant-numeric: tabular-nums; }
+        .s-card .s-sub { font-size: 0.72em; color: #475569; margin-top: 4px; }
+        .v-blue { color: #60a5fa; }
+        .v-green { color: #34d399; }
+        .v-amber { color: #fbbf24; }
+        .v-red { color: #f87171; }
+        .v-purple { color: #c084fc; }
+        .v-cyan { color: #22d3ee; }
+        .v-orange { color: #fb923c; }
+        .v-teal { color: #2dd4bf; }
+
+        /* ─── PER-CAMERA STAT ROWS ─── */
+        .cam-stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 14px; margin-bottom: 28px;
+        }
+        .cs-card {
+            background: rgba(15,23,42,0.7);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 14px;
+            padding: 20px 22px;
+            display: flex; justify-content: space-between; align-items: center;
+            transition: all 0.15s;
+        }
+        .cs-card:hover { border-color: rgba(255,255,255,0.1); }
+        .cs-left { display: flex; align-items: center; gap: 14px; }
+        .cs-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .cs-dot.on { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
+        .cs-dot.off { background: #475569; }
+        .cs-name { font-weight: 600; font-size: 0.92em; }
+        .cs-type {
+            font-size: 0.65em; padding: 2px 8px; border-radius: 5px;
+            font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-left: 8px;
+        }
+        .cs-type.hc { background: rgba(59,130,246,0.12); color: #60a5fa; }
+        .cs-type.ee { background: rgba(168,85,247,0.12); color: #c084fc; }
+        .cs-type.fg { background: rgba(249,115,22,0.12); color: #fb923c; }
+        .cs-type.ppe { background: rgba(20,184,166,0.12); color: #2dd4bf; }
+        .cs-nums { display: flex; gap: 18px; }
+        .cs-num { text-align: center; }
+        .cs-num .n { font-size: 1.35em; font-weight: 800; font-variant-numeric: tabular-nums; }
+        .cs-num .l { font-size: 0.62em; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+        /* ─── TABLE ─── */
+        .table-section {
+            background: rgba(15,23,42,0.6);
+            border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+        .table-section h3 {
+            padding: 18px 22px 14px;
+            font-size: 0.92em; font-weight: 600; color: #94a3b8;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            background: rgba(0,0,0,0.2);
+            color: #64748b; font-weight: 600; padding: 10px 16px;
+            text-align: left; font-size: 0.72em;
+            text-transform: uppercase; letter-spacing: 0.8px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            font-size: 0.88em;
+            font-variant-numeric: tabular-nums;
+        }
+        tr:hover { background: rgba(255,255,255,0.02); }
+        .status-pill {
+            display: inline-block; padding: 3px 10px; border-radius: 6px;
+            font-size: 0.72em; font-weight: 600;
+        }
+        .status-pill.ok { background: rgba(16,185,129,0.12); color: #34d399; }
+        .status-pill.off { background: rgba(100,116,139,0.1); color: #64748b; }
+
+        .no-data {
+            text-align: center; padding: 60px 20px; color: #475569;
+        }
+        .no-data h3 { margin-bottom: 8px; font-weight: 600; color: #64748b; }
+        .no-data a { color: #60a5fa; text-decoration: none; }
+
+        /* ─── ALARM ANALYTICS CHARTS ─── */
+        .alarm-charts-section {
+            margin-bottom: 32px;
+        }
+        .alarm-charts-section h3 {
+            font-size: 0.92em; font-weight: 600; color: #94a3b8;
+            margin-bottom: 16px;
+        }
+        .alarm-charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.4fr;
+            gap: 16px;
+        }
+        .chart-card {
+            background: rgba(15,23,42,0.7);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 14px;
+            padding: 20px 22px;
+        }
+        .chart-card h4 {
+            font-size: 0.78em; font-weight: 600; color: #64748b;
+            text-transform: uppercase; letter-spacing: 0.8px;
+            margin-bottom: 14px;
+        }
+        .chart-wrap { position: relative; height: 260px; }
+        .chart-wrap.tall { height: 300px; }
+        .chart-empty {
+            display: flex; align-items: center; justify-content: center;
+            height: 260px; color: #475569; font-size: 0.88em;
+        }
+        .analytics-grid-3 {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+        }
+        .analytics-grid-2 {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+        }
+        .demo-badge {
+            display: inline-block; font-size: 0.62em; font-weight: 700; letter-spacing: 0.6px;
+            text-transform: uppercase; color: #64748b; background: rgba(100,116,139,0.15);
+            padding: 3px 8px; border-radius: 6px; margin-left: 10px; vertical-align: middle;
+        }
+        .trend-up { color: #34d399; font-size: 0.72em; font-weight: 600; }
+        .trend-down { color: #f87171; font-size: 0.72em; font-weight: 600; }
+
+        @media (max-width: 1100px) {
+            .analytics-grid-3 { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 900px) {
+            .page-body { padding: 20px; }
+            .topbar { padding: 0 20px; }
+            .cam-stats-grid { grid-template-columns: 1fr; }
+            .alarm-charts-grid { grid-template-columns: 1fr; }
+            .analytics-grid-3, .analytics-grid-2 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    {% include 'partials/topbar.html' %}
+
+    <div class="page-body">
+        <div class="tabs">
+            <button class="tab active" id="tabAll" onclick="switchTab('all')">All Detections</button>
+            <button class="tab" id="tabHc" onclick="switchTab('headcount')">Head Count</button>
+            <button class="tab" id="tabEe" onclick="switchTab('entryexit')">Entry / Exit</button>
+            <button class="tab" id="tabFg" onclick="switchTab('flapgate')">Flap Gate</button>
+            <button class="tab" id="tabPpe" onclick="switchTab('ppe')">PPE Detection</button>
+        </div>
+
+        <div class="section-bar">
+            <h2 id="dashTitle">All Active Detections</h2>
+            <button class="btn-refresh" onclick="loadDashboard()">Refresh</button>
+        </div>
+
+        <div id="platformOverview" class="summary-row"></div>
+        <div id="summaryRow" class="summary-row"></div>
+
+        <div class="alarm-charts-section" id="alarmChartsSection">
+            <h3>Alarm Analytics <span class="demo-badge">Demo Data</span></h3>
+            <div class="alarm-charts-grid">
+                <div class="chart-card">
+                    <h4>Alarm Frequency by Camera</h4>
+                    <div class="chart-wrap" id="alarmFreqWrap"><canvas id="alarmFreqChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h4>Alarm Events Trend (per camera)</h4>
+                    <div class="chart-wrap" id="alarmTrendWrap"><canvas id="alarmTrendChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="alarm-charts-section" id="detectionAnalyticsSection">
+            <h3>Detection Analytics <span class="demo-badge">Demo Data</span></h3>
+            <div class="analytics-grid-3">
+                <div class="chart-card">
+                    <h4>Alert Severity Breakdown</h4>
+                    <div class="chart-wrap" id="severityWrap"><canvas id="severityChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h4>Detection Type Distribution</h4>
+                    <div class="chart-wrap" id="detTypeWrap"><canvas id="detTypeChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h4>Hourly Alert Volume (Today)</h4>
+                    <div class="chart-wrap" id="hourlyWrap"><canvas id="hourlyChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="alarm-charts-section" id="operationalSection">
+            <h3>Operational Trends <span class="demo-badge">Demo Data</span></h3>
+            <div class="analytics-grid-3">
+                <div class="chart-card">
+                    <h4>PPE Compliance Rate (14 days)</h4>
+                    <div class="chart-wrap" id="ppeTrendWrap"><canvas id="ppeTrendChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h4>Headcount by Shift</h4>
+                    <div class="chart-wrap" id="shiftWrap"><canvas id="shiftChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h4>Camera Uptime %</h4>
+                    <div class="chart-wrap" id="uptimeWrap"><canvas id="uptimeChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="alarm-charts-section" id="performanceSection">
+            <h3>Performance &amp; Comparison <span class="demo-badge">Demo Data</span></h3>
+            <div class="analytics-grid-2">
+                <div class="chart-card">
+                    <h4>Weekly Alert Comparison</h4>
+                    <div class="chart-wrap tall" id="weeklyWrap"><canvas id="weeklyChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h4>Zone Activity Index</h4>
+                    <div class="chart-wrap tall" id="zoneWrap"><canvas id="zoneChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="camStatsGrid" class="cam-stats-grid"></div>
+        <div id="tableSection"></div>
+    </div>
+
+    <script>
+        const socket = io();
+        let currentTab = 'all';
+        let cameras = [];
+        let stats = { headcount: {}, entryexit: {}, flapgate: {}, ppe: {} };
+        let extendedAnalytics = null;
+        const chartInstances = {};
+
+        const CHART_COLORS = ['#60a5fa','#c084fc','#fb923c','#2dd4bf','#f87171','#fbbf24','#34d399','#f472b6','#38bdf8','#a78bfa'];
+        const chartDefaults = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: '#94a3b8', font: { size: 11 } } } },
+            scales: {
+                x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                y: { ticks: { color: '#64748b', font: { size: 10 }, precision: 0 }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
+            }
+        };
+
+        function getDemoCameras() {
+            return [
+                { camera_id: 'CAM-HC-01', name: 'Main Gate Entry' },
+                { camera_id: 'CAM-HC-02', name: 'Production Floor A' },
+                { camera_id: 'CAM-HC-03', name: 'Warehouse North' },
+                { camera_id: 'CAM-HC-04', name: 'Loading Dock' },
+                { camera_id: 'CAM-EE-01', name: 'Staff Entrance' },
+                { camera_id: 'CAM-EE-02', name: 'Visitor Lobby' },
+                { camera_id: 'CAM-EE-03', name: 'Emergency Exit' },
+                { camera_id: 'CAM-FG-01', name: 'Flap Gate B' },
+                { camera_id: 'CAM-FG-02', name: 'Restricted Zone' },
+                { camera_id: 'CAM-PPE-01', name: 'PPE Zone 1' },
+                { camera_id: 'CAM-PPE-02', name: 'Welding Bay' },
+                { camera_id: 'CAM-PPE-03', name: 'Assembly Line' },
+                { camera_id: 'CAM-PPE-04', name: 'Chemical Storage' },
+            ];
+        }
+
+        function getDemoStats() {
+            return {
+                headcount: {
+                    'CAM-HC-01': { current_count: 18, total_entries: 2147, max_id: 412, status: 'Active' },
+                    'CAM-HC-02': { current_count: 42, total_entries: 3891, max_id: 891, status: 'Active' },
+                    'CAM-HC-03': { current_count: 7, total_entries: 982, max_id: 203, status: 'Active' },
+                    'CAM-HC-04': { current_count: 12, total_entries: 1564, max_id: 318, status: 'Active' },
+                },
+                entryexit: {
+                    'CAM-EE-01': { current_inside: 156, entries: 428, exits: 389, status: 'Active' },
+                    'CAM-EE-02': { current_inside: 23, entries: 187, exits: 164, status: 'Active' },
+                    'CAM-EE-03': { current_inside: 4, entries: 52, exits: 48, status: 'Active' },
+                },
+                flapgate: {
+                    'CAM-FG-01': { persons_in_frame: 2, trespassing_total: 14, status: 'Active' },
+                    'CAM-FG-02': { persons_in_frame: 0, trespassing_total: 6, status: 'Active' },
+                },
+                ppe: {
+                    'CAM-PPE-01': { compliant_count: 28, violation_count: 3, total_persons: 31, status: 'Active' },
+                    'CAM-PPE-02': { compliant_count: 15, violation_count: 2, total_persons: 17, status: 'Active' },
+                    'CAM-PPE-03': { compliant_count: 22, violation_count: 1, total_persons: 23, status: 'Active' },
+                    'CAM-PPE-04': { compliant_count: 8, violation_count: 0, total_persons: 8, status: 'Active' },
+                },
+            };
+        }
+
+        function getDemoAlarmAnalytics() {
+            const labels = [];
+            const today = new Date();
+            for (let i = 29; i >= 0; i--) {
+                const d = new Date(today);
+                d.setDate(d.getDate() - i);
+                labels.push(d.toISOString().slice(0, 10));
+            }
+            const camData = [
+                { camera_id: 'CAM-PPE-02', camera_name: 'Welding Bay', base: 3 },
+                { camera_id: 'CAM-FG-01', camera_name: 'Flap Gate B', base: 2 },
+                { camera_id: 'CAM-HC-02', camera_name: 'Production Floor A', base: 2 },
+                { camera_id: 'CAM-PPE-01', camera_name: 'PPE Zone 1', base: 1 },
+                { camera_id: 'CAM-EE-01', camera_name: 'Staff Entrance', base: 1 },
+            ];
+            const frequency = [
+                { camera_id: 'CAM-PPE-02', camera_name: 'Welding Bay', count: 31 },
+                { camera_id: 'CAM-FG-01', camera_name: 'Flap Gate B', count: 26 },
+                { camera_id: 'CAM-HC-02', camera_name: 'Production Floor A', count: 24 },
+                { camera_id: 'CAM-PPE-01', camera_name: 'PPE Zone 1', count: 19 },
+                { camera_id: 'CAM-EE-01', camera_name: 'Staff Entrance', count: 17 },
+            ];
+            const trendSeries = [
+                [1,1,2,1,3,2,1,2,3,2,2,1,3,2,1,2,3,4,2,1,2,3,2,1,2,3,2,1,2,3],
+                [0,1,1,2,1,2,2,1,2,3,1,2,1,2,1,3,2,2,1,2,1,2,3,1,2,1,2,2,1,2],
+                [1,0,1,1,2,1,1,2,2,1,2,1,2,1,2,2,1,3,2,1,1,2,1,2,1,2,1,2,1,2],
+                [0,1,0,1,1,1,2,1,1,2,1,1,2,1,1,2,1,2,1,1,2,1,1,2,1,1,2,1,1,2],
+            ];
+            return {
+                frequency,
+                trend: {
+                    labels,
+                    cameras: camData.slice(0, 4).map((c, i) => ({
+                        camera_id: c.camera_id,
+                        camera_name: c.camera_name,
+                        counts: trendSeries[i],
+                    })),
+                },
+            };
+        }
+
+        function getDemoExtendedAnalytics() {
+            const days = [];
+            for (let i = 13; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                days.push(`${d.getDate()}/${d.getMonth() + 1}`);
+            }
+            return {
+                severity: { critical: 12, high: 28, medium: 45, low: 18 },
+                detectionTypes: {
+                    labels: ['PPE', 'Head Count', 'Entry/Exit', 'Flap Gate', 'Workforce', 'Fire/Smoke', 'ANPR'],
+                    values: [52, 35, 41, 18, 24, 8, 15],
+                },
+                hourly: {
+                    labels: ['06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'],
+                    values: [2, 5, 12, 18, 14, 11, 8, 15, 19, 16, 12, 9, 6, 4, 2],
+                },
+                ppeCompliance: {
+                    labels: days,
+                    values: [91.2, 92.8, 93.1, 94.5, 93.8, 95.2, 94.1, 93.6, 94.8, 95.4, 94.2, 93.9, 94.6, 94.2],
+                },
+                headcountShift: {
+                    labels: ['Shift A (6–14)', 'Shift B (14–22)', 'Shift C (22–6)'],
+                    values: [428, 391, 187],
+                },
+                cameraUptime: {
+                    labels: ['Main Gate', 'Prod Floor', 'PPE Zone', 'Flap Gate', 'Warehouse', 'Loading Dock'],
+                    values: [99.8, 99.2, 98.7, 99.5, 97.9, 99.1],
+                },
+                weeklyAlerts: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    resolved: [58, 72, 49, 81],
+                    open: [9, 10, 5, 10],
+                },
+                zoneActivity: {
+                    labels: ['Production', 'Warehouse', 'Gate Area', 'PPE Zones', 'Office', 'Loading'],
+                    values: [88, 62, 74, 91, 45, 58],
+                },
+            };
+        }
+
+        function mergeStats(real) {
+            const demo = getDemoStats();
+            const merged = JSON.parse(JSON.stringify(demo));
+            ['headcount', 'entryexit', 'flapgate', 'ppe'].forEach(type => {
+                if (real && real[type]) Object.assign(merged[type], real[type]);
+            });
+            return merged;
+        }
+
+        function mergeCameras(real) {
+            const demo = getDemoCameras();
+            const map = {};
+            demo.forEach(c => { map[c.camera_id] = c; });
+            (real || []).forEach(c => { map[c.camera_id] = c; });
+            return Object.values(map);
+        }
+
+        function destroyChart(id) {
+            if (chartInstances[id]) {
+                chartInstances[id].destroy();
+                delete chartInstances[id];
+            }
+        }
+
+        function ensureChartCanvas(wrapId, canvasId) {
+            const wrap = document.getElementById(wrapId);
+            if (!wrap) return null;
+            if (!wrap.querySelector('canvas')) {
+                wrap.innerHTML = `<canvas id="${canvasId}"></canvas>`;
+            }
+            return document.getElementById(canvasId);
+        }
+
+        socket.on('headcount_stats', data => {
+            stats.headcount[data.camera_id] = data.stats;
+            updateLiveStats();
+        });
+        socket.on('entryexit_stats', data => {
+            stats.entryexit[data.camera_id] = data.stats;
+            updateLiveStats();
+        });
+        socket.on('flapgate_stats', data => {
+            stats.flapgate[data.camera_id] = data.stats;
+            updateLiveStats();
+        });
+        socket.on('ppe_stats', data => {
+            stats.ppe[data.camera_id] = data.stats;
+            updateLiveStats();
+        });
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.className = 'tab');
+            if (tab === 'all') { document.getElementById('tabAll').className = 'tab active'; document.getElementById('dashTitle').textContent = 'All Active Detections'; }
+            if (tab === 'headcount') { document.getElementById('tabHc').className = 'tab active-hc'; document.getElementById('dashTitle').textContent = 'Head Count Detections'; }
+            if (tab === 'entryexit') { document.getElementById('tabEe').className = 'tab active-ee'; document.getElementById('dashTitle').textContent = 'Entry / Exit Detections'; }
+            if (tab === 'flapgate') { document.getElementById('tabFg').className = 'tab active-fg'; document.getElementById('dashTitle').textContent = 'Flap Gate Trespassing'; }
+            if (tab === 'ppe') { document.getElementById('tabPpe').className = 'tab active-ppe'; document.getElementById('dashTitle').textContent = 'PPE Detection'; }
+            toggleAnalyticsSections();
+            renderDashboard();
+        }
+
+        function toggleAnalyticsSections() {
+            const show = currentTab === 'all';
+            ['alarmChartsSection', 'detectionAnalyticsSection', 'operationalSection', 'performanceSection'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = show ? '' : 'none';
+            });
+        }
+
+        async function loadDashboard() {
+            try {
+                const [camRes, statsRes, alarmRes] = await Promise.all([
+                    fetch('/api/cameras').then(r => r.json()).catch(() => []),
+                    fetch('/api/stats').then(r => r.json()).catch(() => ({})),
+                    fetch('/api/alerts/analytics?days=30').then(r => r.json()).catch(() => ({})),
+                ]);
+                cameras = mergeCameras(camRes);
+                stats = mergeStats(statsRes);
+                extendedAnalytics = getDemoExtendedAnalytics();
+                const alarmData = (alarmRes && alarmRes.frequency && alarmRes.frequency.length)
+                    ? alarmRes : getDemoAlarmAnalytics();
+                toggleAnalyticsSections();
+                renderDashboard();
+                renderAlarmCharts(alarmData);
+                renderExtendedCharts(extendedAnalytics);
+            } catch (e) { console.error(e); }
+        }
+
+        function renderAlarmCharts(data) {
+            const freq = (data && data.frequency) || [];
+            const trend = (data && data.trend) || { labels: [], cameras: [] };
+            destroyChart('alarmFreqChart');
+            destroyChart('alarmTrendChart');
+
+            const freqCanvas = ensureChartCanvas('alarmFreqWrap', 'alarmFreqChart');
+            const trendCanvas = ensureChartCanvas('alarmTrendWrap', 'alarmTrendChart');
+            if (!freqCanvas || !trendCanvas) return;
+
+            if (freq.length) {
+                chartInstances.alarmFreqChart = new Chart(freqCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: freq.map(f => f.camera_name || f.camera_id),
+                        datasets: [{
+                            label: 'Alerts (30d)',
+                            data: freq.map(f => f.count),
+                            backgroundColor: freq.map((_, i) => CHART_COLORS[i % CHART_COLORS.length] + '99'),
+                            borderColor: freq.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]),
+                            borderWidth: 1,
+                            borderRadius: 6,
+                        }]
+                    },
+                    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } } }
+                });
+            }
+
+            if (trend.labels && trend.labels.length && trend.cameras.length) {
+                chartInstances.alarmTrendChart = new Chart(trendCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: trend.labels.map(d => {
+                            const p = d.split('-');
+                            return p.length === 3 ? `${p[2]}/${p[1]}` : d;
+                        }),
+                        datasets: trend.cameras.map((cam, i) => ({
+                            label: cam.camera_name || cam.camera_id,
+                            data: cam.counts,
+                            borderColor: CHART_COLORS[i % CHART_COLORS.length],
+                            backgroundColor: CHART_COLORS[i % CHART_COLORS.length] + '22',
+                            tension: 0.35,
+                            fill: false,
+                            pointRadius: 2,
+                            pointHoverRadius: 5,
+                        }))
+                    },
+                    options: chartDefaults
+                });
+            }
+        }
+
+        function renderExtendedCharts(data) {
+            if (!data || currentTab !== 'all') return;
+
+            destroyChart('severityChart');
+            destroyChart('detTypeChart');
+            destroyChart('hourlyChart');
+            destroyChart('ppeTrendChart');
+            destroyChart('shiftChart');
+            destroyChart('uptimeChart');
+            destroyChart('weeklyChart');
+            destroyChart('zoneChart');
+
+            const sevCanvas = ensureChartCanvas('severityWrap', 'severityChart');
+            if (sevCanvas) {
+                chartInstances.severityChart = new Chart(sevCanvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Critical', 'High', 'Medium', 'Low'],
+                        datasets: [{
+                            data: [data.severity.critical, data.severity.high, data.severity.medium, data.severity.low],
+                            backgroundColor: ['#f87171', '#fb923c', '#fbbf24', '#60a5fa'],
+                            borderWidth: 0,
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 11 } } } }
+                    }
+                });
+            }
+
+            const detCanvas = ensureChartCanvas('detTypeWrap', 'detTypeChart');
+            if (detCanvas) {
+                chartInstances.detTypeChart = new Chart(detCanvas, {
+                    type: 'polarArea',
+                    data: {
+                        labels: data.detectionTypes.labels,
+                        datasets: [{
+                            data: data.detectionTypes.values,
+                            backgroundColor: CHART_COLORS.map(c => c + '88'),
+                            borderColor: CHART_COLORS,
+                            borderWidth: 1,
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 10 } } } },
+                        scales: { r: { ticks: { display: false }, grid: { color: 'rgba(255,255,255,0.06)' } } }
+                    }
+                });
+            }
+
+            const hourlyCanvas = ensureChartCanvas('hourlyWrap', 'hourlyChart');
+            if (hourlyCanvas) {
+                chartInstances.hourlyChart = new Chart(hourlyCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: data.hourly.labels,
+                        datasets: [{
+                            label: 'Alerts',
+                            data: data.hourly.values,
+                            backgroundColor: 'rgba(96,165,250,0.55)',
+                            borderColor: '#60a5fa',
+                            borderRadius: 4,
+                        }]
+                    },
+                    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } } }
+                });
+            }
+
+            const ppeCanvas = ensureChartCanvas('ppeTrendWrap', 'ppeTrendChart');
+            if (ppeCanvas) {
+                chartInstances.ppeTrendChart = new Chart(ppeCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: data.ppeCompliance.labels,
+                        datasets: [{
+                            label: 'Compliance %',
+                            data: data.ppeCompliance.values,
+                            borderColor: '#34d399',
+                            backgroundColor: 'rgba(52,211,153,0.15)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 2,
+                        }]
+                    },
+                    options: {
+                        ...chartDefaults,
+                        scales: {
+                            ...chartDefaults.scales,
+                            y: { ...chartDefaults.scales.y, min: 85, max: 100, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v + '%' } }
+                        }
+                    }
+                });
+            }
+
+            const shiftCanvas = ensureChartCanvas('shiftWrap', 'shiftChart');
+            if (shiftCanvas) {
+                chartInstances.shiftChart = new Chart(shiftCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: data.headcountShift.labels,
+                        datasets: [{
+                            label: 'People Detected',
+                            data: data.headcountShift.values,
+                            backgroundColor: ['#60a5fa99', '#c084fc99', '#64748b99'],
+                            borderColor: ['#60a5fa', '#c084fc', '#64748b'],
+                            borderRadius: 6,
+                        }]
+                    },
+                    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } } }
+                });
+            }
+
+            const uptimeCanvas = ensureChartCanvas('uptimeWrap', 'uptimeChart');
+            if (uptimeCanvas) {
+                chartInstances.uptimeChart = new Chart(uptimeCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: data.cameraUptime.labels,
+                        datasets: [{
+                            label: 'Uptime %',
+                            data: data.cameraUptime.values,
+                            backgroundColor: data.cameraUptime.values.map(v => v >= 99 ? '#34d39999' : v >= 98 ? '#fbbf2499' : '#f8717199'),
+                            borderRadius: 4,
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { min: 95, max: 100, ticks: { color: '#64748b', callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                            y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { display: false } }
+                        }
+                    }
+                });
+            }
+
+            const weeklyCanvas = ensureChartCanvas('weeklyWrap', 'weeklyChart');
+            if (weeklyCanvas) {
+                chartInstances.weeklyChart = new Chart(weeklyCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: data.weeklyAlerts.labels,
+                        datasets: [
+                            { label: 'Resolved', data: data.weeklyAlerts.resolved, backgroundColor: '#34d39999', borderColor: '#34d399', borderRadius: 4 },
+                            { label: 'Open', data: data.weeklyAlerts.open, backgroundColor: '#f8717199', borderColor: '#f87171', borderRadius: 4 },
+                        ]
+                    },
+                    options: { ...chartDefaults, scales: { ...chartDefaults.scales, x: { ...chartDefaults.scales.x, stacked: true }, y: { ...chartDefaults.scales.y, stacked: true } } }
+                });
+            }
+
+            const zoneCanvas = ensureChartCanvas('zoneWrap', 'zoneChart');
+            if (zoneCanvas) {
+                chartInstances.zoneChart = new Chart(zoneCanvas, {
+                    type: 'radar',
+                    data: {
+                        labels: data.zoneActivity.labels,
+                        datasets: [{
+                            label: 'Activity Index',
+                            data: data.zoneActivity.values,
+                            borderColor: '#22d3ee',
+                            backgroundColor: 'rgba(34,211,238,0.18)',
+                            pointBackgroundColor: '#22d3ee',
+                            pointRadius: 3,
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { r: {
+                            min: 0, max: 100,
+                            ticks: { display: false, stepSize: 25 },
+                            grid: { color: 'rgba(255,255,255,0.08)' },
+                            pointLabels: { color: '#94a3b8', font: { size: 11 } }
+                        }}
+                    }
+                });
+            }
+        }
+
+        function renderDashboard() {
+            renderPlatformOverview();
+            renderSummary();
+            renderCamStats();
+            renderTable();
+        }
+
+        function renderPlatformOverview() {
+            const el = document.getElementById('platformOverview');
+            if (currentTab !== 'all') {
+                el.innerHTML = '';
+                el.style.display = 'none';
+                return;
+            }
+            el.style.display = '';
+            const hcCams = Object.keys(stats.headcount).length;
+            const totalStreams = hcCams + Object.keys(stats.entryexit).length +
+                Object.keys(stats.flapgate || {}).length + Object.keys(stats.ppe || {}).length;
+            let ppeOk = 0, ppeTotal = 0;
+            Object.keys(stats.ppe || {}).forEach(c => {
+                ppeOk += stats.ppe[c].compliant_count || 0;
+                ppeTotal += stats.ppe[c].total_persons || 0;
+            });
+            const compliance = ppeTotal ? ((ppeOk / ppeTotal) * 100).toFixed(1) : '94.2';
+            el.innerHTML = `
+                <div class="s-card"><div class="s-label">Cameras Online</div><div class="s-value v-blue">18</div><div class="s-sub">of 20 configured</div></div>
+                <div class="s-card"><div class="s-label">Active AI Streams</div><div class="s-value v-cyan">${totalStreams}</div><div class="s-sub trend-up">▲ 3 since yesterday</div></div>
+                <div class="s-card"><div class="s-label">Alerts Today</div><div class="s-value v-amber">27</div><div class="s-sub trend-up">▲ 5 vs daily avg</div></div>
+                <div class="s-card"><div class="s-label">PPE Compliance</div><div class="s-value v-green">${compliance}%</div><div class="s-sub trend-up">▲ 1.2% this week</div></div>
+                <div class="s-card"><div class="s-label">Avg Response Time</div><div class="s-value v-purple">4.2m</div><div class="s-sub trend-down">▼ 0.8m improved</div></div>
+                <div class="s-card"><div class="s-label">System Uptime</div><div class="s-value v-green">99.7%</div><div class="s-sub">Last 30 days</div></div>
+                <div class="s-card"><div class="s-label">Workforce Manned</div><div class="s-value v-teal">5/6</div><div class="s-sub">Machines active</div></div>
+                <div class="s-card"><div class="s-label">Resolved (30d)</div><div class="s-value v-blue">142</div><div class="s-sub">89% resolution rate</div></div>
+            `;
+        }
+
+        function renderSummary() {
+            const hcCams = Object.keys(stats.headcount);
+            const eeCams = Object.keys(stats.entryexit);
+            const fgCams = Object.keys(stats.flapgate || {});
+            const ppeCams = Object.keys(stats.ppe || {});
+
+            let totalHeads = 0, totalHcEntries = 0;
+            hcCams.forEach(c => {
+                totalHeads += (stats.headcount[c].current_count || 0);
+                totalHcEntries += (stats.headcount[c].total_entries || 0);
+            });
+            let totalEntries = 0, totalExits = 0, totalInside = 0;
+            eeCams.forEach(c => {
+                totalEntries += (stats.entryexit[c].entries || 0);
+                totalExits += (stats.entryexit[c].exits || 0);
+                totalInside += (stats.entryexit[c].current_inside || 0);
+            });
+            let totalTrespassing = 0, totalFgPersons = 0;
+            fgCams.forEach(c => {
+                totalTrespassing += (stats.flapgate[c].trespassing_total || 0);
+                totalFgPersons += (stats.flapgate[c].persons_in_frame || 0);
+            });
+            let totalPpeCompliant = 0, totalPpeViolations = 0, totalPpePersons = 0;
+            ppeCams.forEach(c => {
+                totalPpeCompliant += (stats.ppe[c].compliant_count || 0);
+                totalPpeViolations += (stats.ppe[c].violation_count || 0);
+                totalPpePersons += (stats.ppe[c].total_persons || 0);
+            });
+
+            let html = '';
+            if (currentTab === 'all' || currentTab === 'headcount') {
+                html += `
+                    <div class="s-card"><div class="s-label">HC Streams</div><div class="s-value v-blue" id="sum-hc-streams">${hcCams.length}</div></div>
+                    <div class="s-card"><div class="s-label">Current Heads</div><div class="s-value v-green" id="sum-hc-heads">${totalHeads}</div></div>
+                    <div class="s-card"><div class="s-label">HC Total Detected</div><div class="s-value v-amber" id="sum-hc-entries">${totalHcEntries}</div></div>
+                `;
+            }
+            if (currentTab === 'all' || currentTab === 'entryexit') {
+                html += `
+                    <div class="s-card"><div class="s-label">E/E Streams</div><div class="s-value v-purple" id="sum-ee-streams">${eeCams.length}</div></div>
+                    <div class="s-card"><div class="s-label">People Inside</div><div class="s-value v-green" id="sum-ee-inside">${totalInside}</div></div>
+                    <div class="s-card"><div class="s-label">Total Entries</div><div class="s-value v-amber" id="sum-ee-entries">${totalEntries}</div></div>
+                    <div class="s-card"><div class="s-label">Total Exits</div><div class="s-value v-red" id="sum-ee-exits">${totalExits}</div></div>
+                `;
+            }
+            if (currentTab === 'all' || currentTab === 'flapgate') {
+                html += `
+                    <div class="s-card"><div class="s-label">FG Streams</div><div class="s-value v-orange" id="sum-fg-streams">${fgCams.length}</div></div>
+                    <div class="s-card"><div class="s-label">Persons at Gates</div><div class="s-value v-green" id="sum-fg-persons">${totalFgPersons}</div></div>
+                    <div class="s-card"><div class="s-label">Trespassing Events</div><div class="s-value v-red" id="sum-fg-trespassing">${totalTrespassing}</div></div>
+                `;
+            }
+            if (currentTab === 'all' || currentTab === 'ppe') {
+                html += `
+                    <div class="s-card"><div class="s-label">PPE Streams</div><div class="s-value v-teal" id="sum-ppe-streams">${ppeCams.length}</div></div>
+                    <div class="s-card"><div class="s-label">Compliant</div><div class="s-value v-green" id="sum-ppe-compliant">${totalPpeCompliant}</div></div>
+                    <div class="s-card"><div class="s-label">Violations</div><div class="s-value v-red" id="sum-ppe-violations">${totalPpeViolations}</div></div>
+                    <div class="s-card"><div class="s-label">Total Detections</div><div class="s-value v-amber" id="sum-ppe-total">${totalPpePersons}</div></div>
+                `;
+            }
+            document.getElementById('summaryRow').innerHTML = html;
+        }
+
+        function renderCamStats() {
+            const grid = document.getElementById('camStatsGrid');
+            let cards = [];
+
+            if (currentTab === 'all' || currentTab === 'headcount') {
+                Object.keys(stats.headcount).forEach(cid => {
+                    const s = stats.headcount[cid];
+                    const cam = cameras.find(c => c.camera_id === cid);
+                    cards.push(`
+                    <div class="cs-card">
+                        <div class="cs-left">
+                            <div class="cs-dot ${s.status === 'Active' ? 'on' : 'off'}"></div>
+                            <div>
+                                <span class="cs-name">${cam?.name || cid}</span>
+                                <span class="cs-type hc">HC</span>
+                            </div>
+                        </div>
+                        <div class="cs-nums">
+                            <div class="cs-num"><div class="n v-green" id="hc-count-${cid}">${s.current_count || 0}</div><div class="l">Current</div></div>
+                            <div class="cs-num"><div class="n v-amber" id="hc-total-${cid}">${s.total_entries || 0}</div><div class="l">Total</div></div>
+                            <div class="cs-num"><div class="n v-blue" id="hc-max-${cid}">${s.max_id || 0}</div><div class="l">Max ID</div></div>
+                        </div>
+                    </div>`);
+                });
+            }
+            if (currentTab === 'all' || currentTab === 'entryexit') {
+                Object.keys(stats.entryexit).forEach(cid => {
+                    const s = stats.entryexit[cid];
+                    const cam = cameras.find(c => c.camera_id === cid);
+                    cards.push(`
+                    <div class="cs-card">
+                        <div class="cs-left">
+                            <div class="cs-dot ${s.status === 'Active' ? 'on' : 'off'}"></div>
+                            <div>
+                                <span class="cs-name">${cam?.name || cid}</span>
+                                <span class="cs-type ee">E/E</span>
+                            </div>
+                        </div>
+                        <div class="cs-nums">
+                            <div class="cs-num"><div class="n v-green" id="ee-inside-${cid}">${s.current_inside || 0}</div><div class="l">Inside</div></div>
+                            <div class="cs-num"><div class="n v-amber" id="ee-entries-${cid}">${s.entries || 0}</div><div class="l">Entries</div></div>
+                            <div class="cs-num"><div class="n v-red" id="ee-exits-${cid}">${s.exits || 0}</div><div class="l">Exits</div></div>
+                        </div>
+                    </div>`);
+                });
+            }
+            if (currentTab === 'all' || currentTab === 'flapgate') {
+                Object.keys(stats.flapgate || {}).forEach(cid => {
+                    const s = stats.flapgate[cid];
+                    const cam = cameras.find(c => c.camera_id === cid);
+                    cards.push(`
+                    <div class="cs-card">
+                        <div class="cs-left">
+                            <div class="cs-dot ${s.status === 'Active' ? 'on' : 'off'}"></div>
+                            <div>
+                                <span class="cs-name">${cam?.name || cid}</span>
+                                <span class="cs-type fg">FG</span>
+                            </div>
+                        </div>
+                        <div class="cs-nums">
+                            <div class="cs-num"><div class="n v-green" id="fg-persons-${cid}">${s.persons_in_frame || 0}</div><div class="l">Persons</div></div>
+                            <div class="cs-num"><div class="n v-red" id="fg-trespass-${cid}">${s.trespassing_total || 0}</div><div class="l">Trespassing</div></div>
+                        </div>
+                    </div>`);
+                });
+            }
+            if (currentTab === 'all' || currentTab === 'ppe') {
+                Object.keys(stats.ppe || {}).forEach(cid => {
+                    const s = stats.ppe[cid];
+                    const cam = cameras.find(c => c.camera_id === cid);
+                    cards.push(`
+                    <div class="cs-card">
+                        <div class="cs-left">
+                            <div class="cs-dot ${s.status === 'Active' ? 'on' : 'off'}"></div>
+                            <div>
+                                <span class="cs-name">${cam?.name || cid}</span>
+                                <span class="cs-type ppe">PPE</span>
+                            </div>
+                        </div>
+                        <div class="cs-nums">
+                            <div class="cs-num"><div class="n v-green" id="ppe-compliant-${cid}">${s.compliant_count || 0}</div><div class="l">Compliant</div></div>
+                            <div class="cs-num"><div class="n v-red" id="ppe-viol-${cid}">${s.violation_count || 0}</div><div class="l">Violations</div></div>
+                            <div class="cs-num"><div class="n v-teal" id="ppe-total-${cid}">${s.total_persons || 0}</div><div class="l">Total</div></div>
+                        </div>
+                    </div>`);
+                });
+            }
+
+            if (cards.length === 0) {
+                grid.innerHTML = '<div class="no-data"><h3>No cameras for this detection type</h3><p>Enable detections on the <a href="/ai-config">AI Features</a> page</p></div>';
+            } else {
+                grid.innerHTML = cards.join('');
+            }
+        }
+
+        function renderTable() {
+            const section = document.getElementById('tableSection');
+            let items = [];
+
+            if (currentTab === 'all' || currentTab === 'headcount') {
+                Object.keys(stats.headcount).forEach(cid => {
+                    const s = stats.headcount[cid];
+                    const cam = cameras.find(c => c.camera_id === cid);
+                    items.push(`<tr>
+                        <td><strong>${cam?.name || cid}</strong></td>
+                        <td><span class="cs-type hc" style="margin:0">HC</span></td>
+                        <td class="v-green">${s.current_count || 0}</td>
+                        <td>${s.total_entries || 0}</td>
+                        <td>&mdash;</td>
+                        <td>&mdash;</td>
+                        <td><span class="status-pill ${s.status === 'Active' ? 'ok' : 'off'}">${s.status || 'Unknown'}</span></td>
+                        <td>${new Date().toLocaleTimeString()}</td>
+                    </tr>`);
+                });
+            }
+            if (currentTab === 'all' || currentTab === 'entryexit') {
+                Object.keys(stats.entryexit).forEach(cid => {
+                    const s = stats.entryexit[cid];
+                    const cam = cameras.find(c => c.camera_id === cid);
+                    items.push(`<tr>
+                        <td><strong>${cam?.name || cid}</strong></td>
+                        <td><span class="cs-type ee" style="margin:0">E/E</span></td>
+                        <td class="v-green">${s.current_inside || 0}</td>
+                        <td>${s.entries || 0}</td>
+                        <td>${s.exits || 0}</td>
+                        <td class="v-green">${s.current_inside || 0}</td>
+                        <td><span class="status-pill ${s.status === 'Active' ? 'ok' : 'off'}">${s.status || 'Unknown'}</span></td>
+                        <td>${new Date().toLocaleTimeString()}</td>
+                    </tr>`);
+                });
+            }
+            if (currentTab === 'all' || currentTab === 'flapgate') {
+                Object.keys(stats.flapgate || {}).forEach(cid => {
+                    const s = stats.flapgate[cid];
+                    const cam = cameras.find(c => c.camera_id === cid);
+                    items.push(`<tr>
+                        <td><strong>${cam?.name || cid}</strong></td>
+                        <td><span class="cs-type fg" style="margin:0">FG</span></td>
+                        <td class="v-green">${s.persons_in_frame || 0}</td>
+                        <td class="v-red">${s.trespassing_total || 0}</td>
+                        <td>&mdash;</td>
+                        <td>&mdash;</td>
+                        <td><span class="status-pill ${s.status === 'Active' ? 'ok' : 'off'}">${s.status || 'Unknown'}</span></td>
+                        <td>${new Date().toLocaleTimeString()}</td>
+                    </tr>`);
+                });
+            }
+            if (currentTab === 'all' || currentTab === 'ppe') {
+                Object.keys(stats.ppe || {}).forEach(cid => {
+                    const s = stats.ppe[cid];
+                    const cam = cameras.find(c => c.camera_id === cid);
+                    items.push(`<tr>
+                        <td><strong>${cam?.name || cid}</strong></td>
+                        <td><span class="cs-type ppe" style="margin:0">PPE</span></td>
+                        <td class="v-teal">${s.total_persons || 0}</td>
+                        <td class="v-green">${s.compliant_count || 0}</td>
+                        <td class="v-red">${s.violation_count || 0}</td>
+                        <td>&mdash;</td>
+                        <td><span class="status-pill ${s.status === 'Active' ? 'ok' : 'off'}">${s.status || 'Unknown'}</span></td>
+                        <td>${new Date().toLocaleTimeString()}</td>
+                    </tr>`);
+                });
+            }
+
+            if (items.length === 0) { section.innerHTML = ''; return; }
+
+            section.innerHTML = `
+            <div class="table-section">
+                <h3>Live Detection Summary</h3>
+                <table>
+                    <thead><tr>
+                        <th>Camera</th><th>Type</th><th>Count</th><th>Entries</th>
+                        <th>Exits</th><th>Inside</th><th>Status</th><th>Updated</th>
+                    </tr></thead>
+                    <tbody>${items.join('')}</tbody>
+                </table>
+            </div>`;
+        }
+
+        function updateLiveStats() {
+            Object.keys(stats.headcount).forEach(cid => {
+                const s = stats.headcount[cid];
+                const el1 = document.getElementById('hc-count-' + cid);
+                const el2 = document.getElementById('hc-total-' + cid);
+                const el3 = document.getElementById('hc-max-' + cid);
+                if (el1) el1.textContent = s.current_count || 0;
+                if (el2) el2.textContent = s.total_entries || 0;
+                if (el3) el3.textContent = s.max_id || 0;
+            });
+            Object.keys(stats.entryexit).forEach(cid => {
+                const s = stats.entryexit[cid];
+                const el1 = document.getElementById('ee-inside-' + cid);
+                const el2 = document.getElementById('ee-entries-' + cid);
+                const el3 = document.getElementById('ee-exits-' + cid);
+                if (el1) el1.textContent = s.current_inside || 0;
+                if (el2) el2.textContent = s.entries || 0;
+                if (el3) el3.textContent = s.exits || 0;
+            });
+            Object.keys(stats.flapgate || {}).forEach(cid => {
+                const s = stats.flapgate[cid];
+                const el1 = document.getElementById('fg-persons-' + cid);
+                const el2 = document.getElementById('fg-trespass-' + cid);
+                if (el1) el1.textContent = s.persons_in_frame || 0;
+                if (el2) el2.textContent = s.trespassing_total || 0;
+            });
+            Object.keys(stats.ppe || {}).forEach(cid => {
+                const s = stats.ppe[cid];
+                const el1 = document.getElementById('ppe-compliant-' + cid);
+                const el2 = document.getElementById('ppe-viol-' + cid);
+                const el3 = document.getElementById('ppe-total-' + cid);
+                if (el1) el1.textContent = s.compliant_count || 0;
+                if (el2) el2.textContent = s.violation_count || 0;
+                if (el3) el3.textContent = s.total_persons || 0;
+            });
+            renderSummary();
+            if (currentTab === 'all') renderPlatformOverview();
+        }
+
+        loadDashboard();
+        setInterval(loadDashboard, 30000);
+    </script>
+</body>
+</html>

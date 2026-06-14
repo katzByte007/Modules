@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel - 01 | Monitoring Dashboard</title>
+<link rel="stylesheet" href="/static/brand.css">
+<style>
+  :root{
+    --bg:#080d19;--panel:rgba(15,23,42,0.95);--panel2:rgba(30,41,59,0.85);--border:rgba(255,255,255,0.06);--text:#e2e8f0;--muted:#94a3b8;
+    --green:#34d399;--red:#f87171;--amber:#fbbf24;--blue:#3b82f6;--cyan:#60a5fa;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',-apple-system,sans-serif;}
+  body{background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;}
+  .dash-header{
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--panel);border-bottom:1px solid var(--border);padding:12px 20px;
+  }
+  .dash-header-left{display:flex;align-items:center;gap:14px;}
+  .dash-header-left h1{font-size:20px;font-weight:700;}
+  .status-badge{
+    background:var(--green);color:#08240f;font-size:12px;font-weight:700;
+    padding:4px 10px;border-radius:12px;display:flex;align-items:center;gap:6px;
+  }
+  .status-badge.offline{background:#3a4252;color:#8b96ab;}
+  .status-badge.alarm{background:var(--red);color:#fff;}
+  .status-badge .dot{width:8px;height:8px;border-radius:50%;background:#08240f;}
+  .dash-header-right{display:flex;align-items:center;gap:18px;color:var(--muted);font-size:14px;}
+  .dash-header-right .bell{position:relative;font-size:18px;}
+  .dash-header-right .bell .badge{
+    position:absolute;top:-6px;right:-8px;background:var(--red);color:#fff;
+    border-radius:50%;font-size:10px;width:16px;height:16px;display:flex;
+    align-items:center;justify-content:center;font-weight:700;
+  }
+  .nav-link{color:var(--muted);font-size:12px;text-decoration:none;}
+  .nav-link:hover{color:var(--blue);}
+  .container{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;padding:16px;}
+  @media(max-width:1000px){.container{grid-template-columns:1fr;}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;}
+  .card h2{font-size:14px;color:var(--muted);margin-bottom:12px;letter-spacing:.5px;font-weight:600;text-transform:uppercase;}
+  .live-feed{
+    background:rgba(8,13,25,0.8);border-radius:8px;height:340px;position:relative;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid var(--border);
+  }
+  .live-feed img{width:100%;height:100%;object-fit:contain;display:block;}
+  .live-feed .cam-tag{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.5);font-size:11px;padding:3px 8px;border-radius:4px;color:#cfd6e4;z-index:2;}
+  .live-feed .timestamp{position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,.5);font-size:12px;padding:3px 8px;border-radius:4px;color:#cfd6e4;z-index:2;}
+  .live-feed .no-feed{color:var(--muted);font-size:13px;text-align:center;padding:20px;z-index:1;}
+  .feed-controls{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;
+    padding-top:10px;border-top:1px solid var(--border);
+  }
+  .feed-controls input[type=file]{font-size:12px;color:var(--muted);flex:1;min-width:160px;}
+  .ctrl-btn{
+    padding:7px 16px;border-radius:6px;border:1px solid var(--border);background:var(--panel2);
+    color:var(--text);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;
+  }
+  .ctrl-btn.upload{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .ctrl-btn.start{background:rgba(46,204,113,.15);border-color:var(--green);color:var(--green);}
+  .ctrl-btn.stop{background:rgba(255,77,79,.15);border-color:var(--red);color:var(--red);}
+  .feed-status{font-size:11px;color:var(--muted);width:100%;margin-top:4px;}
+  .feed-status .sdot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;}
+  .feed-status .sdot.on{background:var(--green);box-shadow:0 0 5px var(--green);}
+  .feed-status .sdot.off{background:#546e7a;}
+  .status-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  .status-item{display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;}
+  .status-item .lbl{display:flex;align-items:center;gap:8px;}
+  .status-item .dot{width:9px;height:9px;border-radius:50%;}
+  .pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;}
+  .pill.on{background:rgba(46,204,113,.15);color:var(--green);}
+  .pill.off{background:rgba(255,77,79,.15);color:var(--red);}
+  .pill.off.muted{background:rgba(255,77,79,.08);color:#c97b7c;}
+  .metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+  .metric-box{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;}
+  .metric-box .m-label{font-size:11px;color:var(--muted);margin-bottom:6px;}
+  .metric-box .m-val{font-size:24px;font-weight:700;font-family:'Courier New',monospace;}
+  .metric-box .m-status{font-size:11px;margin-top:4px;font-weight:600;}
+  .m-status.normal{color:var(--green);}.m-status.warn{color:var(--amber);}.m-status.alarm{color:var(--red);}
+  .events-card .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .events-card .head a{color:var(--blue);font-size:12px;text-decoration:none;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th{text-align:left;color:var(--muted);font-weight:600;padding:6px 4px;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;}
+  td{padding:7px 4px;border-bottom:1px solid var(--border);}
+  .ev-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;}
+  .ev-status{font-weight:700;font-size:11px;}.ev-status.off{color:var(--red);}
+  .chart-wrap{position:relative;height:160px;}
+  .legend{display:flex;gap:16px;font-size:11px;color:var(--muted);margin-bottom:8px;flex-wrap:wrap;}
+  .legend span{display:flex;align-items:center;gap:5px;}
+  .legend .sw{width:12px;height:3px;border-radius:2px;display:inline-block;}
+  .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:0 16px 18px;}
+  @media(max-width:800px){.summary{grid-template-columns:repeat(2,1fr);}}
+  .sum-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;align-items:center;gap:14px;}
+  .sum-icon{width:42px;height:42px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;}
+  .sum-icon.blue{background:rgba(58,160,255,.15);color:var(--blue);}
+  .sum-icon.green{background:rgba(46,204,113,.15);color:var(--green);}
+  .sum-icon.amber{background:rgba(245,166,35,.15);color:var(--amber);}
+  .sum-icon.red{background:rgba(255,77,79,.15);color:var(--red);}
+  .sum-text .num{font-size:22px;font-weight:700;}
+  .sum-text .lbl{font-size:12px;color:var(--muted);}
+  .blink{animation:blink 1s infinite;}
+  @keyframes blink{0%,49%{opacity:1;}50%,100%{opacity:.25;}}
+  .toast{position:fixed;bottom:20px;right:20px;background:#3b82f6;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;display:none;z-index:999;}
+  .dash-header-left h1{color:#cbd5e1;}
+</style>
+</head>
+<body>
+
+{% include 'partials/topbar.html' %}
+
+<div class="dash-header">
+  <div class="dash-header-left">
+    <h1>PANEL - 01</h1>
+    <div class="status-badge" id="onlineBadge"><span class="dot"></span> ONLINE</div>
+  </div>
+  <div class="dash-header-right">
+    <a href="/modules" class="nav-link">← MODULES</a>
+    <div class="bell">🔔<span class="badge" id="alarmCount">2</span></div>
+    <div id="clock">—</div>
+    <div>Admin</div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="card">
+    <h2>Live Panel View</h2>
+    <div class="live-feed" id="liveFeed">
+      <span class="cam-tag">📷 PANEL CAM-01</span>
+      <div class="no-feed" id="noFeed">Choose an MP4 video below, then click Start Monitoring<br><span style="font-size:11px;margin-top:6px;display:block">Upload happens automatically when you start</span></div>
+      <img id="feedImg" style="display:none" alt="Panel Camera">
+      <span class="timestamp" id="feedTime">—</span>
+    </div>
+    <div class="feed-controls">
+      <input type="file" accept=".mp4,.avi,.mov,.mkv" id="videoFile">
+      <button class="ctrl-btn upload" onclick="uploadVideo()">Upload</button>
+      <button class="ctrl-btn start" onclick="startPanel()">▶ Start Monitoring</button>
+      <button class="ctrl-btn stop" onclick="stopPanel()">■ Stop</button>
+    </div>
+    <div class="feed-status" id="feedStatus">
+      <span class="sdot off"></span><span id="feedStatusText">No video loaded</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Panel Status Summary</h2>
+    <div class="status-grid" id="statusGrid"></div>
+    <div class="metrics">
+      <div class="metric-box">
+        <div class="m-label">AC VOLTAGE (V)</div>
+        <div class="m-val" style="color:var(--blue)" id="m-ac">415.0</div>
+        <div class="m-status normal" id="ms-ac">Normal</div>
+      </div>
+      <div class="metric-box">
+        <div class="m-label">DC VOLTAGE (V)</div>
+        <div class="m-val" style="color:var(--green)" id="m-dc">125.1</div>
+        <div class="m-status normal" id="ms-dc">Normal</div>
+      </div>
+      <div class="metric-box">
+        <div class="m-label">DC CURRENT (A)</div>
+        <div class="m-val" style="color:var(--cyan)" id="m-cur">284</div>
+        <div class="m-status normal" id="ms-cur">Normal</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="card events-card">
+    <div class="head"><h2 style="margin:0;">Recent Events</h2><a href="/alerts">View All</a></div>
+    <table>
+      <thead><tr><th>Time</th><th>Event</th><th>Status</th><th>Duration</th></tr></thead>
+      <tbody id="eventsBody"></tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h2>Status Trend (Last 24 Hours)</h2>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--green)"></i>UPS ON</span>
+      <span><i class="sw" style="background:var(--cyan)"></i>AC SUPPLY FAIL</span>
+      <span><i class="sw" style="background:var(--red)"></i>BATTERY LOW</span>
+      <span><i class="sw" style="background:var(--amber)"></i>UPS FAULT</span>
+    </div>
+    <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+  </div>
+</div>
+
+<div class="summary">
+  <div class="sum-card">
+    <div class="sum-icon blue">🗄️</div>
+    <div class="sum-text">
+      <div class="num" id="sum-total">12</div>
+      <div class="lbl">Total Panels<br>
+        <span style="color:var(--green)">Online: <span id="sum-online">11</span></span> |
+        <span style="color:var(--red)">Offline: <span id="sum-offline">1</span></span>
+      </div>
+    </div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-icon green">✅</div>
+    <div class="sum-text"><div class="num" id="sum-normal">9</div><div class="lbl">Normal<br><span id="sum-normal-pct">75%</span></div></div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-icon amber">⚠️</div>
+    <div class="sum-text"><div class="num" id="sum-warn">1</div><div class="lbl">Warning<br><span id="sum-warn-pct">8%</span></div></div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-icon red">🚨</div>
+    <div class="sum-text"><div class="num" id="sum-alarm">2</div><div class="lbl">Alarm<br><span id="sum-alarm-pct">17%</span></div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const PANEL_ID = 'UPS-PANEL-01';
+let isRunning = false;
+
+const STATUS_ITEMS = [
+  {key:'ups_on', label:'UPS ON', alarm:false},
+  {key:'bypass_on', label:'BYPASS ON', alarm:false},
+  {key:'mains_on', label:'MAINS ON', alarm:false},
+  {key:'battery_on', label:'BATTERY ON', alarm:false},
+  {key:'charger_on', label:'CHARGER ON', alarm:false},
+  {key:'ac_supply_fail', label:'AC SUPPLY FAIL', alarm:true},
+  {key:'battery_low', label:'BATTERY LOW', alarm:true},
+  {key:'ups_fault', label:'UPS FAULT', alarm:true},
+  {key:'overload', label:'OVERLOAD', alarm:true},
+  {key:'earth_fault', label:'EARTH FAULT', alarm:true},
+];
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.display='block';
+  setTimeout(()=>t.style.display='none',3000);
+}
+
+function updateClock(){
+  const now=new Date();
+  const opts={day:'2-digit',month:'short',year:'numeric'};
+  const dateStr=now.toLocaleDateString('en-GB',opts).replace(/ /g,' ');
+  const timeStr=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
+  document.getElementById('clock').textContent=dateStr+', '+timeStr;
+  const pad=n=>String(n).padStart(2,'0');
+  document.getElementById('feedTime').textContent=
+    `${pad(now.getDate())}-${pad(now.getMonth()+1)}-${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+}
+setInterval(updateClock,1000); updateClock();
+
+function renderStatusGrid(statuses){
+  document.getElementById('statusGrid').innerHTML = STATUS_ITEMS.map(item => {
+    const on = !!statuses[item.key];
+    let dotColor, pillClass, pillText;
+    if (item.alarm) {
+      dotColor = 'var(--red)';
+      pillText = 'OFF';
+      pillClass = on ? 'off' : 'off muted';
+    } else {
+      dotColor = on ? 'var(--green)' : 'var(--red)';
+      pillText = on ? 'ON' : 'OFF';
+      pillClass = on ? 'on' : 'off muted';
+    }
+    return `<div class="status-item">
+      <span class="lbl"><span class="dot" style="background:${dotColor}"></span>${item.label}</span>
+      <span class="pill ${pillClass}">${pillText}</span>
+    </div>`;
+  }).join('');
+}
+
+function setMeter(id, val, msId, status){
+  document.getElementById(id).textContent = val != null ? Number(val).toFixed(1) : '—';
+  const el = document.getElementById(msId);
+  el.textContent = status === 'alarm' ? 'Alarm' : status === 'warn' ? 'Warning' : 'Normal';
+  el.className = 'm-status ' + (status || 'normal');
+}
+
+function renderEvents(events){
+  const body = document.getElementById('eventsBody');
+  if (!events || !events.length) {
+    body.innerHTML = '<tr><td colspan="4" style="color:var(--muted)">No events yet</td></tr>';
+    return;
+  }
+  body.innerHTML = events.slice(0,5).map(ev => `
+    <tr>
+      <td><span class="ev-dot" style="background:var(--red)"></span>${ev.time}</td>
+      <td>${ev.event}</td>
+      <td><span class="ev-status off">${ev.status}</span></td>
+      <td>${ev.duration}</td>
+    </tr>`).join('');
+}
+
+function showStream(){
+  const img = document.getElementById('feedImg');
+  const noFeed = document.getElementById('noFeed');
+  img.src = '/api/ups/frame/' + PANEL_ID + '?t=' + Date.now();
+  img.style.display = 'block';
+  noFeed.style.display = 'none';
+  isRunning = true;
+}
+
+function updateFeed(panel){
+  const running = !!(panel.running || panel.enabled || panel.video_status === 'active');
+  const img = document.getElementById('feedImg');
+  const noFeed = document.getElementById('noFeed');
+  if (running) {
+    if (!isRunning || !img.src.includes('/api/ups/frame/')) {
+      showStream();
+    }
+  } else {
+    isRunning = false;
+    img.style.display = 'none';
+    noFeed.style.display = 'block';
+  }
+}
+
+function updateFeedStatus(panel){
+  const dot = panel.running ? 'on' : 'off';
+  let msg = 'No video loaded';
+  if (panel.running) msg = 'Running · ' + (panel.video_name || 'active');
+  else if (panel.video_name) msg = panel.video_name + ' — click Start Monitoring';
+  document.getElementById('feedStatus').innerHTML =
+    `<span class="sdot ${dot}"></span><span id="feedStatusText">${msg}</span>`;
+}
+
+function applyData(data){
+  const panel = data.panel || {};
+  const summary = data.summary || {};
+  const badge = document.getElementById('onlineBadge');
+  if (panel.running || panel.online) {
+    badge.className = 'status-badge' + (panel.health === 'alarm' ? ' alarm blink' : '');
+    badge.innerHTML = '<span class="dot"></span> ONLINE';
+  } else {
+    badge.className = 'status-badge offline';
+    badge.innerHTML = '<span class="dot"></span> OFFLINE';
+  }
+  document.getElementById('alarmCount').textContent = panel.alarm_count || 2;
+  renderStatusGrid(panel.statuses || {});
+  setMeter('m-ac', panel.ac_voltage, 'ms-ac', panel.meter_status?.ac);
+  setMeter('m-dc', panel.dc_voltage, 'ms-dc', panel.meter_status?.dc);
+  setMeter('m-cur', panel.dc_current, 'ms-cur', panel.meter_status?.current);
+  renderEvents(panel.recent_events);
+  updateFeed(panel);
+  updateFeedStatus(panel);
+  document.getElementById('sum-total').textContent = summary.total_panels || 12;
+  document.getElementById('sum-online').textContent = summary.online || 11;
+  document.getElementById('sum-offline').textContent = summary.offline || 1;
+  document.getElementById('sum-normal').textContent = summary.normal || 9;
+  document.getElementById('sum-warn').textContent = summary.warning || 1;
+  document.getElementById('sum-alarm').textContent = summary.alarm || 2;
+  document.getElementById('sum-normal-pct').textContent = (summary.normal_pct || 75) + '%';
+  document.getElementById('sum-warn-pct').textContent = (summary.warning_pct || 8) + '%';
+  document.getElementById('sum-alarm-pct').textContent = (summary.alarm_pct || 17) + '%';
+}
+
+async function uploadVideo(){
+  const inp = document.getElementById('videoFile');
+  if (!inp.files.length) { toast('Select a video file first'); return; }
+  const fd = new FormData();
+  fd.append('video', inp.files[0]);
+  toast('Uploading...');
+  const res = await fetch('/api/ups/panels/' + PANEL_ID + '/upload', { method:'POST', body:fd });
+  const data = await res.json();
+  if (data.ok) {
+    toast('Uploaded: ' + data.video_name);
+    updateFeedStatus({ running: false, video_name: data.video_name });
+    refresh();
+  } else toast(data.error || 'Upload failed');
+}
+
+async function startPanel(){
+  const inp = document.getElementById('videoFile');
+  const hasFile = inp.files && inp.files.length > 0;
+  const fd = new FormData();
+  if (hasFile) fd.append('video', inp.files[0]);
+  toast('Starting...');
+  const res = await fetch('/api/ups/start', { method:'POST', body: hasFile ? fd : null });
+  const data = await res.json();
+  if (data.ok) {
+    showStream();
+    updateFeedStatus({ running: true, video_name: data.video_name || '' });
+    toast('Monitoring started');
+    setTimeout(refresh, 500);
+    setTimeout(refresh, 2000);
+  } else {
+    toast(data.error || data.message || 'Start failed — choose file & try again');
+  }
+}
+
+async function stopPanel(){
+  isRunning = false;
+  await fetch('/api/ups/stop', { method:'POST' });
+  toast('Stopped');
+  refresh();
+}
+
+async function refresh(){
+  try {
+    const [statusRes, trendRes] = await Promise.all([
+      fetch('/api/ups/status'), fetch('/api/ups/trend')
+    ]);
+    applyData(await statusRes.json());
+    drawChart(await trendRes.json());
+  } catch(e) { console.error(e); }
+}
+
+const canvas = document.getElementById('trendChart');
+const ctx = canvas.getContext('2d');
+function resizeCanvas(){ canvas.width = canvas.parentElement.clientWidth; canvas.height = 160; }
+window.addEventListener('resize', () => { resizeCanvas(); if(window._trendData) drawChart(window._trendData); });
+
+function drawChart(data){
+  window._trendData = data;
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle = '#1f2a44'; ctx.lineWidth = 1;
+  for(let i=0;i<=4;i++){
+    const y = 10 + i*(h-30)/4;
+    ctx.beginPath();ctx.moveTo(40,y);ctx.lineTo(w-10,y);ctx.stroke();
+  }
+  ctx.fillStyle = '#8b96ab'; ctx.font = '10px Segoe UI';
+  ctx.fillText('ON', 5, 18); ctx.fillText('OFF', 2, h-22);
+  const labels = data.labels || [];
+  const top = 10, bottom = h-30, lineY_on = top+5, lineY_off = bottom-5;
+  labels.forEach((t,i)=>{
+    const x = 40 + i*((w-50)/Math.max(labels.length-1,1));
+    ctx.fillText(t, x-12, h-5);
+  });
+  function drawStepLine(color, values){
+    if (!values.length) return;
+    ctx.strokeStyle = color; ctx.lineWidth = 2;
+    const xEnd = w-10;
+    let y = lineY_off;
+    ctx.beginPath();
+    ctx.moveTo(40, y);
+    values.forEach((v,i)=>{
+      const x = 40 + i*((xEnd-40)/Math.max(values.length-1,1));
+      const ny = v ? lineY_on : lineY_off;
+      ctx.lineTo(x, y);
+      ctx.lineTo(x, ny);
+      y = ny;
+    });
+    ctx.lineTo(xEnd, y);
+    ctx.stroke();
+  }
+  drawStepLine('#2ecc71', data.ups_on || []);
+  drawStepLine('#39d6c8', data.ac_fail || []);
+  drawStepLine('#ff4d4f', data.batt_low || []);
+  drawStepLine('#f5a623', data.ups_fault || []);
+}
+
+resizeCanvas();
+refresh();
+setInterval(refresh, 2000);
+setInterval(() => {
+  if (isRunning) {
+    const img = document.getElementById('feedImg');
+    if (img.style.display !== 'none') img.src = '/api/ups/frame/' + PANEL_ID + '?t=' + Date.now();
+  }
+}, 100);
+</script>
+{% include 'partials/module_chatbot.html' with context %}
+</body>
+</html>

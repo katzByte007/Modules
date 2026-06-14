@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assigned Engineers &mdash; Sutek Vision AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/brand.css">
+    <style>
+        body { margin: 0; font-family: 'Inter', sans-serif; background: #080d19; color: #e2e8f0; min-height: 100vh; }
+        .wrap { max-width: 1100px; margin: 24px auto; padding: 0 20px 40px; }
+        .title { font-size: 1.35rem; font-weight: 700; margin: 0 0 6px; }
+        .sub { color: #94a3b8; margin: 0 0 20px; font-size: 0.92rem; }
+        .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+        button { padding: 9px 14px; border-radius: 8px; border: 0; background: #2563eb; color: #fff; font-weight: 600; cursor: pointer; font-family: inherit; }
+        .summary { display: flex; gap: 12px; margin-bottom: 22px; flex-wrap: wrap; }
+        .sum-card {
+            background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px; padding: 16px 20px; min-width: 140px;
+        }
+        .sum-card .n { font-size: 1.8rem; font-weight: 800; color: #60a5fa; }
+        .sum-card .l { font-size: 0.72rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 4px; }
+        .eng-card {
+            background: rgba(15,23,42,0.85); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px; margin-bottom: 16px; overflow: hidden;
+        }
+        .eng-hdr {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 20px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.04);
+            gap: 12px; flex-wrap: wrap;
+        }
+        .eng-name { font-weight: 700; font-size: 1rem; }
+        .eng-meta { font-size: 0.82rem; color: #94a3b8; margin-top: 4px; }
+        .eng-badge {
+            font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 6px;
+            background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.25);
+        }
+        .alert-list { padding: 8px 12px 12px; }
+        .alert-row {
+            display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
+            padding: 12px 14px; border-radius: 10px; margin: 6px 0;
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04);
+        }
+        .alert-row:hover { border-color: rgba(255,255,255,0.1); }
+        .alert-title { font-weight: 600; font-size: 0.9rem; }
+        .alert-sub { font-size: 0.78rem; color: #64748b; margin-top: 4px; }
+        .sev { font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
+        .sev.high, .sev.critical { background: rgba(239,68,68,0.15); color: #fca5a5; }
+        .sev.medium { background: rgba(251,191,36,0.12); color: #fde68a; }
+        .sev.info { background: rgba(52,211,153,0.12); color: #6ee7b7; }
+        .link-btn { color: #60a5fa; text-decoration: none; font-size: 0.82rem; font-weight: 600; }
+        .empty { text-align: center; padding: 48px 20px; color: #64748b; border: 1px dashed rgba(255,255,255,0.08); border-radius: 14px; }
+    </style>
+</head>
+<body>
+    {% include 'partials/topbar.html' %}
+
+    <div class="wrap">
+        <h1 class="title">Assigned Engineers</h1>
+        <p class="sub">Engineers with active alert assignments from the Alerts timeline.</p>
+
+        <div class="toolbar">
+            <button onclick="loadData()">Refresh</button>
+            <span class="sub" style="margin:0" id="meta"></span>
+        </div>
+
+        <div class="summary" id="summary"></div>
+        <div id="content"><div class="empty">Loading...</div></div>
+    </div>
+
+    <script>
+        function esc(s) {
+            const d = document.createElement('div');
+            d.textContent = s == null ? '' : String(s);
+            return d.innerHTML;
+        }
+
+        async function loadData() {
+            const content = document.getElementById('content');
+            try {
+                const res = await fetch('/api/assigned-engineers');
+                const data = await res.json();
+                const engineers = data.engineers || [];
+                document.getElementById('meta').textContent =
+                    engineers.length + ' engineer(s) · ' + (data.total_assigned_alerts || 0) + ' active assignment(s)';
+
+                document.getElementById('summary').innerHTML = `
+                    <div class="sum-card"><div class="n">${engineers.length}</div><div class="l">Engineers</div></div>
+                    <div class="sum-card"><div class="n">${data.total_assigned_alerts || 0}</div><div class="l">Assigned Alerts</div></div>
+                `;
+
+                if (!engineers.length) {
+                    content.innerHTML = '<div class="empty">No engineers have assigned alerts yet. Assign alerts from the <a href="/alerts" class="link-btn">Alerts</a> page.</div>';
+                    return;
+                }
+
+                content.innerHTML = engineers.map(eng => `
+                    <div class="eng-card">
+                        <div class="eng-hdr">
+                            <div>
+                                <div class="eng-name">${esc(eng.name)}</div>
+                                <div class="eng-meta">${esc(eng.role || 'Engineer')}${eng.phone ? ' · ' + esc(eng.phone) : ''}${eng.email ? ' · ' + esc(eng.email) : ''}</div>
+                            </div>
+                            <span class="eng-badge">${eng.alerts.length} alert(s)</span>
+                        </div>
+                        <div class="alert-list">
+                            ${eng.alerts.map(a => `
+                                <div class="alert-row">
+                                    <div>
+                                        <div class="alert-title">${esc(a.alert_label || a.detection_type)}</div>
+                                        <div class="alert-sub">${esc(a.camera_name || a.camera_id)} · ${esc(a.created_time || '')} · ${esc(a.status || 'assigned')}</div>
+                                    </div>
+                                    <div style="display:flex;align-items:center;gap:10px;">
+                                        <span class="sev ${esc((a.severity || 'medium').toLowerCase())}">${esc(a.severity || 'medium')}</span>
+                                        <a class="link-btn" href="/alerts/${a.id}">View ›</a>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                content.innerHTML = '<div class="empty">Failed to load: ' + esc(e.message) + '</div>';
+            }
+        }
+
+        loadData();
+        setInterval(loadData, 20000);
+    </script>
+</body>
+</html>

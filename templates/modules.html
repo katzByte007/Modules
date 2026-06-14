@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modules — Sutek Vision AI</title>
+    <link rel="stylesheet" href="/static/brand.css">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: #080d19; color: #e2e8f0; min-height: 100vh; }
+        .page-body { padding: 28px 40px; max-width: 1200px; margin: 0 auto; }
+        .section-title { font-size: 0.72em; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px; }
+        .module-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .module-card {
+            background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,41,59,0.9));
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 28px;
+            cursor: pointer; transition: all 0.25s;
+        }
+        .module-card:hover { border-color: rgba(0,229,255,0.3); transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+        .module-card .mc-icon {
+            width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.6em; background: rgba(30,136,229,0.15); border: 1px solid rgba(30,136,229,0.3); margin-bottom: 16px;
+        }
+        .module-card.ups .mc-icon { background: rgba(58,160,255,0.15); border-color: rgba(58,160,255,0.3); }
+        .module-card.ups h3 { color: #3aa0ff; }
+        .module-card h3 { font-size: 1.15em; font-weight: 700; margin-bottom: 8px; color: #00e5ff; }
+        .module-card p { font-size: 0.85em; color: #94a3b8; line-height: 1.6; margin-bottom: 16px; }
+        .module-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .mod-btn {
+            padding: 8px 20px; border-radius: 8px; font-size: 0.82em; font-weight: 600;
+            text-decoration: none; letter-spacing: 1px; text-transform: uppercase; transition: all 0.2s;
+        }
+        .mod-btn.config { background: rgba(21,101,192,0.2); border: 1px solid #1565c0; color: #42a5f5; }
+        .mod-btn.config:hover { background: rgba(21,101,192,0.4); }
+        .mod-btn.apply { background: rgba(0,230,118,0.15); border: 1px solid #00e676; color: #00e676; }
+        .mod-btn.apply:hover { background: rgba(0,230,118,0.3); }
+        .back-btn { display: inline-flex; align-items: center; gap: 8px; color: #94a3b8; text-decoration: none; font-size: 0.88em; margin-bottom: 20px; }
+        .back-btn:hover { color: #e2e8f0; }
+        .wf-detail { display: none; margin-top: 24px; }
+        .wf-detail.show { display: block; }
+    </style>
+</head>
+<body>
+{% include 'partials/topbar.html' %}
+<div class="page-body">
+    <div class="section-title">Application Modules</div>
+    <div class="module-cards">
+        <div class="module-card" id="wfCard">
+            <div class="mc-icon">👷</div>
+            <h3>Workforce Monitoring</h3>
+            <p>Real-time machine manpower tracking, PPE helmet compliance, pose-based consciousness detection, and no-manpower alerts for JSW iShop production floor.</p>
+            <div class="module-actions">
+                <a href="/modules/workforce-monitoring/apply" class="mod-btn apply">Open Dashboard</a>
+            </div>
+        </div>
+        <div class="module-card ups" id="upsCard">
+            <div class="mc-icon">⚡</div>
+            <h3>Panel</h3>
+            <p>Live panel camera monitoring with LED status detection, AC/DC meter OCR (PaddleOCR), fault alarms, event logging, and 24-hour status trend for PANEL - 01.</p>
+            <div class="module-actions">
+                <a href="/modules/ups-panel/apply" class="mod-btn apply">Open Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+{% if active_module == 'workforce' %}
+document.getElementById('wfCard').style.borderColor = 'rgba(0,229,255,0.4)';
+{% endif %}
+{% if active_module == 'ups' %}
+document.getElementById('upsCard').style.borderColor = 'rgba(58,160,255,0.4)';
+{% endif %}
+</script>
+</body>
+</html>

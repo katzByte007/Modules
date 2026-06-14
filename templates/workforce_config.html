@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workforce Monitoring — Config</title>
+    <link rel="stylesheet" href="/static/brand.css">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #020d1f; color: #e3f2fd; min-height: 100vh; }
+        .page-body { padding: 20px 32px 40px; max-width: 1400px; margin: 0 auto; }
+        .back-btn { color: #90a4ae; text-decoration: none; font-size: 0.88em; display: inline-block; margin-bottom: 16px; }
+        .back-btn:hover { color: #00e5ff; }
+        .page-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+        .page-hdr h1 { font-size: 1.3em; color: #00e5ff; letter-spacing: 2px; text-transform: uppercase; }
+        .toolbar { display: flex; gap: 12px; flex-wrap: wrap; }
+        .tbtn {
+            padding: 8px 20px; border-radius: 6px; border: 1px solid #1565c0; background: rgba(21,101,192,0.2);
+            color: #42a5f5; font-size: 0.82em; font-weight: 600; cursor: pointer; letter-spacing: 1px;
+        }
+        .tbtn.green { border-color: #00e676; color: #00e676; background: rgba(0,230,118,0.15); }
+        .tbtn.red { border-color: #c62828; color: #ef5350; background: rgba(198,40,40,0.15); }
+        .tbtn:hover { opacity: 0.85; }
+        .info-bar {
+            background: rgba(21,101,192,0.1); border: 1px solid #0d3a6e; padding: 12px 16px;
+            border-radius: 8px; margin-bottom: 20px; font-size: 0.85em; color: #90a4ae; line-height: 1.5;
+        }
+        .machine-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .mc-card { border: 1px solid #0d3a6e; background: #061933; overflow: hidden; }
+        .mc-hdr {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 6px 10px; background: rgba(0,0,0,0.4); border-bottom: 1px solid #0d3a6e;
+        }
+        .mc-hdr span { font-size: 0.75em; font-weight: 700; color: #00e5ff; letter-spacing: 1.5px; }
+        .mc-feed { width: 100%; aspect-ratio: 4/3; background: #041428; position: relative; }
+        .mc-feed img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .mc-feed .placeholder {
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            color: #546e7a; font-size: 0.75em;
+        }
+        .mc-body { padding: 10px; }
+        .mc-file { font-size: 0.72em; color: #90a4ae; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .upload-row { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
+        .upload-row input[type=file] { font-size: 0.7em; color: #90a4ae; flex: 1; }
+        .upload-btn {
+            padding: 4px 10px; font-size: 0.68em; background: #1565c0; color: #fff; border: none;
+            border-radius: 4px; cursor: pointer; white-space: nowrap;
+        }
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.75em; }
+        .toggle-row label { color: #90a4ae; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+        .status-dot.on { background: #00e676; box-shadow: 0 0 6px #00e676; }
+        .status-dot.off { background: #546e7a; }
+        .toast { position: fixed; bottom: 20px; right: 20px; background: #1565c0; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 0.85em; display: none; z-index: 999; }
+    </style>
+</head>
+<body>
+{% include 'partials/topbar.html' %}
+<div class="page-body">
+    <a href="/modules" class="back-btn">← Back to Modules</a>
+    <div class="page-hdr">
+        <h1>Workforce Monitoring — Config</h1>
+        <div class="toolbar">
+            <button class="tbtn green" onclick="startAll()">▶ Start All</button>
+            <button class="tbtn red" onclick="stopAll()">■ Stop All</button>
+            <a href="/modules/workforce-monitoring/apply" class="tbtn">Open Dashboard ▶</a>
+        </div>
+    </div>
+    <div class="info-bar">
+        Upload <strong>.mp4</strong> videos for each machine (MACHINE-01 to MACHINE-06). Detection includes:
+        <strong>person count</strong>, <strong>PPE helmet compliance</strong>, <strong>pose-based consciousness</strong> (sleep/unconscious via MediaPipe),
+        and <strong>no-manpower alerts</strong> after 5 minutes. Click Start All to begin processing.
+    </div>
+    <div class="machine-grid" id="grid"></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const MACHINES = [];
+function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3000);
+}
+async function loadMachines() {
+    const res = await fetch('/api/workforce/machines');
+    const data = await res.json();
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    data.machines.forEach(m => {
+        const div = document.createElement('div');
+        div.className = 'mc-card';
+        const feedSrc = m.running ? `/video_feed/workforce/${m.machine_id}` : '';
+        div.innerHTML = `
+            <div class="mc-hdr">
+                <span>${m.machine_id}</span>
+                <span style="font-size:0.68em;color:#546e7a">${m.cam_label}</span>
+            </div>
+            <div class="mc-feed">
+                ${feedSrc ? `<img src="${feedSrc}" alt="${m.machine_id}">` : '<div class="placeholder">No stream — upload video &amp; enable</div>'}
+            </div>
+            <div class="mc-body">
+                <div class="mc-file" title="${m.video_name || 'No video'}">${m.video_name || 'No video uploaded'}</div>
+                <div class="upload-row">
+                    <input type="file" accept=".mp4,.avi,.mov,.mkv" id="file-${m.machine_id}">
+                    <button class="upload-btn" onclick="upload('${m.machine_id}')">Upload</button>
+                </div>
+                <div class="toggle-row">
+                    <label><span class="status-dot ${m.running ? 'on' : 'off'}"></span>${m.running ? 'Running' : 'Stopped'} · ${m.video_status || 'inactive'}</label>
+                    <button class="upload-btn" onclick="toggle('${m.machine_id}', ${!m.enabled})">${m.enabled ? 'Disable' : 'Enable'}</button>
+                </div>
+            </div>`;
+        grid.appendChild(div);
+    });
+}
+async function upload(mid) {
+    const inp = document.getElementById('file-' + mid);
+    if (!inp.files.length) { toast('Select a video file first'); return; }
+    const fd = new FormData();
+    fd.append('video', inp.files[0]);
+    toast('Uploading...');
+    const res = await fetch('/api/workforce/machines/' + mid + '/upload', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.ok) { toast('Uploaded: ' + data.video_name); loadMachines(); }
+    else toast(data.error || 'Upload failed');
+}
+async function toggle(mid, enable) {
+    const res = await fetch('/api/workforce/machines/' + mid + '/enable', {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({enabled: enable})
+    });
+    const data = await res.json();
+    toast(data.message || (enable ? 'Started' : 'Stopped'));
+    loadMachines();
+}
+async function startAll() {
+    const res = await fetch('/api/workforce/start-all', { method: 'POST' });
+    const data = await res.json();
+    toast('Started ' + data.started + ' machines');
+    loadMachines();
+}
+async function stopAll() {
+    await fetch('/api/workforce/stop-all', { method: 'POST' });
+    toast('All machines stopped');
+    loadMachines();
+}
+loadMachines();
+setInterval(loadMachines, 8000);
+</script>
+</body>
+</html>

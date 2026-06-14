@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Features &mdash; Sutek Vision AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/brand.css">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #080d19;
+            color: #e2e8f0;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+        .page-body { padding: 28px 40px; max-width: 1400px; margin: 0 auto; }
+
+        /* ─── VIEWS ─── */
+        .view { display: none; }
+        .view.active { display: block; }
+
+        /* ─── LEVEL 1: DETECTION TYPE CARDS ─── */
+        .section-title {
+            font-size: 0.72em; font-weight: 700; color: #64748b;
+            text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px;
+        }
+        .type-cards {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-bottom: 32px;
+        }
+        .type-card {
+            background: linear-gradient(135deg, rgba(15,23,42,0.95) 0%, rgba(30,41,59,0.9) 100%);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            padding: 32px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .type-card:hover {
+            border-color: rgba(59,130,246,0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+        }
+        .type-card .tc-icon {
+            width: 56px; height: 56px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5em; font-weight: 800; margin-bottom: 20px;
+        }
+        .tc-hc .tc-icon { background: rgba(59,130,246,0.12); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); }
+        .tc-ee .tc-icon { background: rgba(168,85,247,0.12); color: #c084fc; border: 1px solid rgba(168,85,247,0.2); }
+        .tc-fg .tc-icon { background: rgba(249,115,22,0.12); color: #fb923c; border: 1px solid rgba(249,115,22,0.2); }
+        .tc-ppe .tc-icon { background: rgba(20,184,166,0.12); color: #2dd4bf; border: 1px solid rgba(20,184,166,0.2); }
+        .tc-fs .tc-icon { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+        .tc-anpr .tc-icon { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
+        .tc-beta .tc-icon { background: rgba(236,72,153,0.12); color: #f472b6; border: 1px solid rgba(236,72,153,0.2); }
+        .type-card h3 { font-size: 1.15em; font-weight: 700; margin-bottom: 8px; }
+        .type-card p { font-size: 0.85em; color: #94a3b8; line-height: 1.6; margin-bottom: 20px; }
+        .type-card .tc-stat {
+            display: flex; gap: 24px;
+        }
+        .tc-stat-item { text-align: center; }
+        .tc-stat-item .num { font-size: 1.6em; font-weight: 700; }
+        .tc-stat-item .lbl { font-size: 0.7em; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+        .tc-hc .num { color: #60a5fa; }
+        .tc-ee .num { color: #c084fc; }
+        .tc-fg .num { color: #fb923c; }
+        .tc-ppe .num { color: #2dd4bf; }
+        .tc-fs .num { color: #f87171; }
+        .tc-anpr .num { color: #fbbf24; }
+        .tc-beta .num { color: #f472b6; }
+        .type-card .tc-arrow {
+            position: absolute; right: 28px; top: 50%; transform: translateY(-50%);
+            font-size: 1.5em; color: #334155; transition: all 0.2s;
+        }
+        .type-card:hover .tc-arrow { color: #94a3b8; transform: translateY(-50%) translateX(4px); }
+
+        /* ─── LEVEL 2: DETECTION CONFIG ─── */
+        .back-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: none; border: none; color: #94a3b8;
+            font-size: 0.88em; font-weight: 500; cursor: pointer;
+            padding: 8px 0; margin-bottom: 20px; font-family: inherit;
+            transition: color 0.15s;
+        }
+        .back-btn:hover { color: #e2e8f0; }
+        .config-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 24px; flex-wrap: wrap; gap: 16px;
+        }
+        .config-header h2 { font-size: 1.2em; font-weight: 700; }
+        .config-header .tag-hc { color: #60a5fa; }
+        .config-header .tag-ee { color: #c084fc; }
+        .config-header .tag-fg { color: #fb923c; }
+        .config-header .tag-ppe { color: #2dd4bf; }
+        .config-header .tag-fs { color: #f87171; }
+        .config-header .tag-anpr { color: #fbbf24; }
+        .config-header .tag-beta { color: #f472b6; }
+
+        .toolbar {
+            background: rgba(15,23,42,0.8);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            padding: 18px 24px;
+            margin-bottom: 20px;
+            display: flex; gap: 20px; align-items: center; flex-wrap: wrap;
+        }
+        .toolbar label { font-size: 0.82em; color: #94a3b8; font-weight: 500; }
+        .select-all-wrap { display: flex; align-items: center; gap: 10px; }
+        .conf-slider-wrap { display: flex; align-items: center; gap: 10px; flex: 1; max-width: 360px; }
+        .conf-slider-wrap input[type="range"] {
+            flex: 1; accent-color: #3b82f6; height: 4px;
+        }
+        .conf-val { color: #3b82f6; font-weight: 700; font-size: 0.9em; min-width: 36px; }
+
+        .btn-apply {
+            padding: 10px 28px; border: none; border-radius: 10px;
+            font-weight: 600; font-size: 0.88em; cursor: pointer;
+            font-family: inherit; transition: all 0.2s;
+            letter-spacing: 0.2px;
+        }
+        .btn-apply-hc { background: #3b82f6; color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.3); }
+        .btn-apply-hc:hover { background: #2563eb; }
+        .btn-apply-ee { background: #8b5cf6; color: #fff; box-shadow: 0 2px 8px rgba(139,92,246,0.3); }
+        .btn-apply-ee:hover { background: #7c3aed; }
+        .btn-apply-fg { background: #f97316; color: #fff; box-shadow: 0 2px 8px rgba(249,115,22,0.3); }
+        .btn-apply-fg:hover { background: #ea580c; }
+        .btn-apply-ppe { background: #0d9488; color: #fff; box-shadow: 0 2px 8px rgba(13,148,136,0.3); }
+        .btn-apply-ppe:hover { background: #0f766e; }
+        .btn-apply-fs { background: #dc2626; color: #fff; box-shadow: 0 2px 8px rgba(220,38,38,0.3); }
+        .btn-apply-fs:hover { background: #b91c1c; }
+        .btn-apply-anpr { background: #d97706; color: #fff; box-shadow: 0 2px 8px rgba(217,119,6,0.3); }
+        .btn-apply-anpr:hover { background: #b45309; }
+        .btn-apply-beta { background: #be185d; color: #fff; box-shadow: 0 2px 8px rgba(190,24,93,0.3); }
+        .btn-apply-beta:hover { background: #9d174d; }
+        .btn-apply:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .prompt-row {
+            background: rgba(15,23,42,0.8);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start;
+        }
+        .prompt-row .prompt-input-wrap { flex: 1; min-width: 260px; }
+        .prompt-row .prompt-input-wrap label { display: block; font-size: 0.75em; color: #64748b; margin-bottom: 6px; }
+        .prompt-row .prompt-input-wrap input[type="text"] {
+            width: 100%; padding: 10px 14px; border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);
+            color: #e2e8f0; font-size: 0.9em;
+        }
+        .prompt-row .prompt-cams { flex: 1; min-width: 280px; }
+        .prompt-row .prompt-cams label { display: block; font-size: 0.75em; color: #64748b; margin-bottom: 8px; }
+        .prompt-row .prompt-cams .cam-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        .prompt-row .prompt-cams .cam-chip {
+            padding: 6px 12px; border-radius: 8px; font-size: 0.8em;
+            border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);
+            cursor: pointer; color: #94a3b8; transition: all 0.15s;
+        }
+        .prompt-row .prompt-cams .cam-chip.selected { border-color: rgba(236,72,153,0.5); background: rgba(236,72,153,0.15); color: #f472b6; }
+        .prompt-row .btn-remove-prompt {
+            padding: 8px 14px; border: none; border-radius: 8px; background: rgba(239,68,68,0.2);
+            color: #f87171; font-size: 0.85em; cursor: pointer; font-weight: 500;
+        }
+        .prompt-row .btn-remove-prompt:hover { background: rgba(239,68,68,0.3); }
+        .add-prompt-btn {
+            padding: 12px 24px; border: 2px dashed rgba(236,72,153,0.4); border-radius: 12px;
+            background: rgba(236,72,153,0.06); color: #f472b6; font-weight: 600; font-size: 0.9em;
+            cursor: pointer; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px;
+        }
+        .add-prompt-btn:hover { background: rgba(236,72,153,0.12); border-color: rgba(236,72,153,0.6); }
+
+        /* Camera list */
+        .cam-list {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 12px;
+        }
+        .cam-item {
+            background: rgba(15,23,42,0.7);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 16px 18px;
+            display: flex; align-items: center; gap: 14px;
+            transition: all 0.15s;
+            cursor: pointer;
+        }
+        .cam-item:hover { border-color: rgba(255,255,255,0.1); background: rgba(15,23,42,0.9); }
+        .cam-item.selected { border-color: rgba(59,130,246,0.4); background: rgba(59,130,246,0.06); }
+        .cam-item.selected-ee { border-color: rgba(168,85,247,0.4); background: rgba(168,85,247,0.06); }
+        .cam-item.selected-fg { border-color: rgba(249,115,22,0.4); background: rgba(249,115,22,0.06); }
+        .cam-item.selected-ppe { border-color: rgba(20,184,166,0.4); background: rgba(20,184,166,0.06); }
+        .cam-item.selected-fs { border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.06); }
+        .cam-item.selected-anpr { border-color: rgba(245,158,11,0.4); background: rgba(245,158,11,0.06); }
+
+        .cam-item input[type="checkbox"] {
+            width: 18px; height: 18px; accent-color: #3b82f6;
+            border-radius: 4px; cursor: pointer; flex-shrink: 0;
+        }
+        .cam-item-info { flex: 1; min-width: 0; }
+        .cam-item-name { font-weight: 600; font-size: 0.9em; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cam-item-url { font-size: 0.75em; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cam-item-badges { display: flex; gap: 6px; flex-shrink: 0; }
+        .mini-badge {
+            font-size: 0.65em; padding: 2px 8px; border-radius: 5px;
+            font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
+        }
+        .mb-on { background: rgba(16,185,129,0.12); color: #34d399; }
+        .mb-off { background: rgba(100,116,139,0.1); color: #64748b; }
+        .mb-zone-ok { background: rgba(16,185,129,0.12); color: #34d399; }
+        .mb-zone-no { background: rgba(245,158,11,0.12); color: #fbbf24; }
+        .zone-link {
+            font-size: 0.75em; color: #60a5fa; text-decoration: none; font-weight: 500;
+        }
+        .zone-link:hover { text-decoration: underline; }
+
+        .cam-dot {
+            width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+        }
+        .cam-dot.on { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
+        .cam-dot.off { background: #475569; }
+
+        /* Checkbox styles */
+        .select-all-wrap input[type="checkbox"] {
+            width: 18px; height: 18px; accent-color: #3b82f6; cursor: pointer;
+        }
+
+        /* Status bar */
+        .apply-status {
+            margin-top: 16px; padding: 14px 20px; border-radius: 12px;
+            font-weight: 500; font-size: 0.88em; display: none;
+        }
+        .apply-status.ok { display: block; background: rgba(16,185,129,0.1); color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
+        .apply-status.err { display: block; background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+        .apply-status.prog { display: block; background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); }
+
+        .empty-state {
+            text-align: center; padding: 80px 20px; color: #475569;
+        }
+        .empty-state h3 { margin-bottom: 8px; font-weight: 600; color: #64748b; }
+        .empty-state a { color: #60a5fa; text-decoration: none; }
+
+        @media (max-width: 1300px) {
+            .type-cards { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 800px) {
+            .type-cards { grid-template-columns: 1fr; }
+            .page-body { padding: 20px; }
+            .topbar { padding: 0 20px; }
+            .cam-list { grid-template-columns: 1fr; }
+        }
+
+        /* ─── FR Detection card & view ─── */
+        .tc-fr .tc-icon { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
+        .tc-fr .num { color: #34d399; }
+        .config-header .tag-fr { color: #34d399; }
+        .btn-apply-fr { background: #059669; color: #fff; box-shadow: 0 2px 8px rgba(5,150,105,0.3); }
+        .btn-apply-fr:hover { background: #047857; }
+        .cam-item.selected-fr { border-color: rgba(16,185,129,0.4); background: rgba(16,185,129,0.06); }
+        .cam-item input[type="checkbox"].fr-chk { accent-color: #34d399; }
+
+        /* FR tabs */
+        .fr-tabs { display: flex; gap: 4px; margin-bottom: 20px; background: rgba(15,23,42,0.6); border-radius: 10px; padding: 4px; width: fit-content; }
+        .fr-tab { padding: 8px 20px; border-radius: 8px; font-size: 0.85em; font-weight: 600; cursor: pointer; color: #64748b; background: none; border: none; font-family: inherit; transition: all 0.2s; }
+        .fr-tab.active { background: rgba(16,185,129,0.15); color: #34d399; }
+        .fr-tab:hover:not(.active) { color: #94a3b8; }
+
+        /* FR dataset table */
+        .fr-dataset-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .fr-dataset-table th { font-size: 0.72em; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; padding: 8px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .fr-dataset-table td { padding: 10px 12px; font-size: 0.85em; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .fr-dataset-table tr:hover td { background: rgba(255,255,255,0.02); }
+        .btn-fr-del { padding: 5px 14px; border: none; border-radius: 7px; background: rgba(239,68,68,0.2); color: #f87171; font-size: 0.8em; cursor: pointer; font-weight: 500; }
+        .btn-fr-del:hover { background: rgba(239,68,68,0.35); }
+        .btn-fr-add { padding: 10px 22px; border: 2px dashed rgba(16,185,129,0.4); border-radius: 12px; background: rgba(16,185,129,0.06); color: #34d399; font-weight: 600; font-size: 0.88em; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+        .btn-fr-add:hover { background: rgba(16,185,129,0.12); }
+
+        /* FR collect panel */
+        .fr-collect-panel { background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 24px; margin-bottom: 20px; }
+        .fr-collect-panel label { font-size: 0.82em; color: #94a3b8; font-weight: 500; display: block; margin-bottom: 6px; }
+        .fr-collect-panel input[type="text"], .fr-collect-panel select {
+            width: 100%; padding: 10px 14px; border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);
+            color: #e2e8f0; font-size: 0.9em; margin-bottom: 14px;
+        }
+        .fr-live-preview { width: 100%; max-width: 640px; border-radius: 10px; margin-top: 12px; display: none; }
+        .fr-progress-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.08); margin: 8px 0 4px; overflow: hidden; }
+        .fr-progress-bar-inner { height: 100%; background: #34d399; transition: width 0.4s; border-radius: 3px; }
+        .fr-status-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.72em; font-weight: 600; }
+        .fr-status-badge.active-badge { background: rgba(16,185,129,0.15); color: #34d399; }
+        .fr-status-badge.off-badge { background: rgba(100,116,139,0.1); color: #64748b; }
+        .fr-unavail-banner { padding: 14px 18px; background: rgba(239,68,68,0.1); border-radius: 12px; color: #f87171; font-size: 0.85em; margin-bottom: 16px; border: 1px solid rgba(239,68,68,0.2); }
+    </style>
+</head>
+<body>
+    {% include 'partials/topbar.html' %}
+
+    <div class="page-body">
+        <!-- LEVEL 1: Detection Type Selection -->
+        <div id="viewTypes" class="view active">
+            <div class="section-title">Select Detection Module</div>
+            <p style="font-size: 0.8em; color: #94a3b8; margin-bottom: 16px;">You can enable more than one detection type on the same camera (e.g. Head Count + Entry/Exit + PPE).</p>
+            <div class="type-cards">
+                <div class="type-card tc-hc" onclick="openConfig('headcount')">
+                    <div class="tc-icon">HC</div>
+                    <h3>Head Count Detection</h3>
+                    <p>Detects and counts heads in the frame using a custom-trained model. Best suited for overhead or elevated camera angles. Tracks unique IDs with Kalman filtering.</p>
+                    <div class="tc-stat">
+                        <div class="tc-stat-item"><div class="num" id="hcActiveCount">0</div><div class="lbl">Active</div></div>
+                        <div class="tc-stat-item"><div class="num" id="hcTotalCams">0</div><div class="lbl">Total Cameras</div></div>
+                    </div>
+                    <div class="tc-arrow">&#8594;</div>
+                </div>
+                <div class="type-card tc-ee" onclick="openConfig('entryexit')">
+                    <div class="tc-icon">E/E</div>
+                    <h3>Entry / Exit Zone Detection</h3>
+                    <p>Tracks people crossing defined entry and exit zones to accurately count occupancy. Requires per-camera zone configuration. Uses person detection with zone-based state tracking.</p>
+                    <div class="tc-stat">
+                        <div class="tc-stat-item"><div class="num" id="eeActiveCount">0</div><div class="lbl">Active</div></div>
+                        <div class="tc-stat-item"><div class="num" id="eeTotalCams">0</div><div class="lbl">Total Cameras</div></div>
+                    </div>
+                    <div class="tc-arrow">&#8594;</div>
+                </div>
+                <div class="type-card tc-fg" onclick="openConfig('flapgate')">
+                    <div class="tc-icon">FG</div>
+                    <h3>Flap Gate Trespassing</h3>
+                    <p>Monitors 3 flap gates for trespassing. Detects gate color (green/red), tracks persons via segmentation, and alerts when multiple people enter during a single gate opening.</p>
+                    <div class="tc-stat">
+                        <div class="tc-stat-item"><div class="num" id="fgActiveCount">0</div><div class="lbl">Active</div></div>
+                        <div class="tc-stat-item"><div class="num" id="fgTotalCams">0</div><div class="lbl">Total Cameras</div></div>
+                    </div>
+                    <div class="tc-arrow">&#8594;</div>
+                </div>
+                <div class="type-card tc-ppe" onclick="openConfig('ppe')">
+                    <div class="tc-icon">PPE</div>
+                    <h3>PPE Detection</h3>
+                    <p>Detects Personal Protective Equipment compliance — helmets, vests, gloves, masks and more. Flags violations in real time using a custom-trained multi-class PPE model.</p>
+                    <div class="tc-stat">
+                        <div class="tc-stat-item"><div class="num" id="ppeActiveCount">0</div><div class="lbl">Active</div></div>
+                        <div class="tc-stat-item"><div class="num" id="ppeTotalCams">0</div><div class="lbl">Total Cameras</div></div>
+                    </div>
+                    <div class="tc-arrow">&#8594;</div>
+                </div>
+                <div class="type-card tc-fs" onclick="openConfig('firesmoke')">
+                    <div class="tc-icon">F/S</div>
+                    <h3>Fire and Smoke Detection</h3>
+                    <p>Detects fire and smoke in live camera streams using a dedicated custom model. Raises high-severity incident alerts with saved snapshot evidence.</p>
+                    <div class="tc-stat">
+                        <div class="tc-stat-item"><div class="num" id="fsActiveCount">0</div><div class="lbl">Active</div></div>
+                        <div class="tc-stat-item"><div class="num" id="fsTotalCams">0</div><div class="lbl">Total Cameras</div></div>
+                    </div>
+                    <div class="tc-arrow">&#8594;</div>
+                </div>
+                <div class="type-card tc-anpr" onclick="openConfig('anpr')">
+                    <div class="tc-icon">ANPR</div>
+                    <h3>ANPR Detection</h3>
+                    <p>Detects vehicle type, license plate number, and vehicle speed using LibreYOLO models. Flags overspeeding when speed is above the configured threshold.</p>
+                    <div class="tc-stat">
+                        <div class="tc-stat-item"><div class="num" id="anprActiveCount">0</div><div class="lbl">Active</div></div>
+                        <div class="tc-stat-item"><div class="num" id="anprTotalCams">0</div><div class="lbl">Total Cameras</div></div>
+                    </div>
+                    <div class="tc-arrow">&#8594;</div>
+                </div>
+                <div class="type-card tc-beta" onclick="openConfig('beta')">
+                    <div class="tc-icon">B</div>
+                    <h3>Beta Model Detection</h3>
+                    <p>Open-vocabulary (OWLv2) or Florence-2 instruction monitoring. For OWLv2 use comma labels; for Florence-2 use monitoring instructions to raise anomaly alerts on live streams.</p>
+                    <div class="tc-stat">
+                        <div class="tc-stat-item"><div class="num" id="betaActiveCount">0</div><div class="lbl">Active</div></div>
+                        <div class="tc-stat-item"><div class="num" id="betaTotalCams">0</div><div class="lbl">Total Cameras</div></div>
+                    </div>
+                    <div class="tc-arrow">&#8594;</div>
+                </div>
+                <div class="type-card tc-fr" onclick="openConfig('fr')">
+                    <div class="tc-icon">FR</div>
+                    <h3>FR Detection</h3>
+                    <p>Face Recognition using InsightFace AntelopeV2. Collect face images per employee, manage datasets, and run live recognition on selected cameras with high-accuracy identity matching.</p>
+                    <div class="tc-stat">
+                        <div class="tc-stat-item"><div class="num" id="frActiveCount">0</div><div class="lbl">Active</div></div>
+                        <div class="tc-stat-item"><div class="num" id="frTotalCams">0</div><div class="lbl">Total Cameras</div></div>
+                    </div>
+                    <div class="tc-arrow">&#8594;</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LEVEL 2A: Head Count Config -->
+        <div id="viewHC" class="view">
+            <button class="back-btn" onclick="goBack()">&#8592; Back to AI Features</button>
+            <div class="config-header">
+                <h2><span class="tag-hc">Head Count</span> Configuration</h2>
+            </div>
+            <div class="toolbar">
+                <div class="select-all-wrap">
+                    <input type="checkbox" id="hcSelectAll" onchange="toggleSelectAll('hc', this.checked)">
+                    <label for="hcSelectAll">Select All</label>
+                </div>
+                <div class="conf-slider-wrap">
+                    <label>Confidence:</label>
+                    <input type="range" id="hcGlobalConf" min="0.05" max="0.9" step="0.05" value="0.1"
+                           oninput="document.getElementById('hcConfVal').textContent=this.value">
+                    <span class="conf-val" id="hcConfVal">0.1</span>
+                </div>
+                <button class="btn-apply btn-apply-hc" id="hcApplyBtn" onclick="applyHC()">Apply to Selected</button>
+            </div>
+            <div class="cam-list" id="hcCamList"></div>
+            <div class="apply-status" id="hcStatus"></div>
+        </div>
+
+        <!-- LEVEL 2B: Entry/Exit Config -->
+        <div id="viewEE" class="view">
+            <button class="back-btn" onclick="goBack()">&#8592; Back to AI Features</button>
+            <div class="config-header">
+                <h2><span class="tag-ee">Entry / Exit</span> Configuration</h2>
+            </div>
+            <div class="toolbar">
+                <div class="select-all-wrap">
+                    <input type="checkbox" id="eeSelectAll" onchange="toggleSelectAll('ee', this.checked)">
+                    <label for="eeSelectAll">Select All</label>
+                </div>
+                <div class="conf-slider-wrap">
+                    <label>Confidence:</label>
+                    <input type="range" id="eeGlobalConf" min="0.1" max="0.9" step="0.05" value="0.5"
+                           oninput="document.getElementById('eeConfVal').textContent=this.value">
+                    <span class="conf-val" id="eeConfVal">0.5</span>
+                </div>
+                <button class="btn-apply btn-apply-ee" id="eeApplyBtn" onclick="applyEE()">Apply to Selected</button>
+            </div>
+            <div class="cam-list" id="eeCamList"></div>
+            <div class="apply-status" id="eeStatus"></div>
+        </div>
+
+        <!-- LEVEL 2C: Flap Gate Config -->
+        <div id="viewFG" class="view">
+            <button class="back-btn" onclick="goBack()">&#8592; Back to AI Features</button>
+            <div class="config-header">
+                <h2><span class="tag-fg">Flap Gate Trespassing</span> Configuration</h2>
+            </div>
+            <div class="toolbar">
+                <div class="select-all-wrap">
+                    <input type="checkbox" id="fgSelectAll" onchange="toggleSelectAll('fg', this.checked)">
+                    <label for="fgSelectAll">Select All</label>
+                </div>
+                <div class="conf-slider-wrap">
+                    <label>Confidence:</label>
+                    <input type="range" id="fgGlobalConf" min="0.1" max="0.9" step="0.05" value="0.65"
+                           oninput="document.getElementById('fgConfVal').textContent=this.value">
+                    <span class="conf-val" id="fgConfVal">0.65</span>
+                </div>
+                <button class="btn-apply btn-apply-fg" id="fgApplyBtn" onclick="applyFG()">Apply to Selected</button>
+            </div>
+            <div class="cam-list" id="fgCamList"></div>
+            <div class="apply-status" id="fgStatus"></div>
+        </div>
+
+        <!-- LEVEL 2D: PPE Detection Config -->
+        <div id="viewPPE" class="view">
+            <button class="back-btn" onclick="goBack()">&#8592; Back to AI Features</button>
+            <div class="config-header">
+                <h2><span class="tag-ppe">PPE Detection</span> Configuration</h2>
+            </div>
+            <div class="toolbar">
+                <div class="select-all-wrap">
+                    <input type="checkbox" id="ppeSelectAll" onchange="toggleSelectAll('ppe', this.checked)">
+                    <label for="ppeSelectAll">Select All</label>
+                </div>
+                <div class="conf-slider-wrap">
+                    <label>Confidence:</label>
+                    <input type="range" id="ppeGlobalConf" min="0.1" max="0.9" step="0.05" value="0.4"
+                           oninput="document.getElementById('ppeConfVal').textContent=this.value">
+                    <span class="conf-val" id="ppeConfVal">0.4</span>
+                </div>
+                <button class="btn-apply btn-apply-ppe" id="ppeApplyBtn" onclick="applyPPE()">Apply to Selected</button>
+            </div>
+            <div class="cam-list" id="ppeCamList"></div>
+            <div class="apply-status" id="ppeStatus"></div>
+        </div>
+
+        <!-- LEVEL 2F: Fire / Smoke Detection Config -->
+        <div id="viewFS" class="view">
+            <button class="back-btn" onclick="goBack()">&#8592; Back to AI Features</button>
+            <div class="config-header">
+                <h2><span class="tag-fs">Fire and Smoke</span> Configuration</h2>
+            </div>
+            <div class="toolbar">
+                <div class="select-all-wrap">
+                    <input type="checkbox" id="fsSelectAll" onchange="toggleSelectAll('fs', this.checked)">
+                    <label for="fsSelectAll">Select All</label>
+                </div>
+                <div class="conf-slider-wrap">
+                    <label>Confidence:</label>
+                    <input type="range" id="fsGlobalConf" min="0.1" max="0.9" step="0.05" value="0.35"
+                           oninput="document.getElementById('fsConfVal').textContent=this.value">
+                    <span class="conf-val" id="fsConfVal">0.35</span>
+                </div>
+                <button class="btn-apply btn-apply-fs" id="fsApplyBtn" onclick="applyFS()">Apply to Selected</button>
+            </div>
+            <div class="cam-list" id="fsCamList"></div>
+            <div class="apply-status" id="fsStatus"></div>
+        </div>
+
+        <!-- LEVEL 2H: ANPR Detection Config -->
+        <div id="viewANPR" class="view">
+            <button class="back-btn" onclick="goBack()">&#8592; Back to AI Features</button>
+            <div class="config-header">
+                <h2><span class="tag-anpr">ANPR</span> Configuration</h2>
+            </div>
+            <div id="anprUnavailable" style="display:none; padding:16px; background: rgba(239,68,68,0.1); border-radius:12px; color:#f87171; margin-bottom:16px; border:1px solid rgba(239,68,68,0.2);"></div>
+            <div class="toolbar">
+                <div class="select-all-wrap">
+                    <input type="checkbox" id="anprSelectAll" onchange="toggleSelectAll('anpr', this.checked)">
+                    <label for="anprSelectAll">Select All</label>
+                </div>
+                <div class="conf-slider-wrap">
+                    <label>Vehicle Confidence:</label>
+                    <input type="range" id="anprGlobalConf" min="0.05" max="0.9" step="0.05" value="0.25"
+                           oninput="document.getElementById('anprConfVal').textContent=this.value">
+                    <span class="conf-val" id="anprConfVal" style="color:#fbbf24;">0.25</span>
+                </div>
+                <div class="conf-slider-wrap">
+                    <label>Speed Threshold:</label>
+                    <input type="number" id="anprSpeedThreshold" min="1" max="300" step="1" value="50"
+                           style="width:92px; padding:8px 10px; border-radius:8px; background:#1e293b; color:#e2e8f0; border:1px solid #334155;">
+                    <span class="conf-val" style="color:#fbbf24; min-width:52px;">km/h</span>
+                </div>
+                <button class="btn-apply btn-apply-anpr" id="anprApplyBtn" onclick="applyANPR()">Apply to Selected</button>
+            </div>
+            <p style="font-size:0.8em;color:#94a3b8;margin:-6px 0 16px;">
+                Uses <code>models/ANPRlib.pt</code> for plates and <code>models/LibreYOLO9s.pt</code> for vehicle type. Speed accuracy depends on camera calibration via <code>VISION_ANPR_METERS_PER_PIXEL</code>.
+            </p>
+            <div class="cam-list" id="anprCamList"></div>
+            <div class="apply-status" id="anprStatus"></div>
+        </div>
+
+        <!-- LEVEL 2G: Face Recognition (FR) Detection Config -->
+        <div id="viewFR" class="view">
+            <button class="back-btn" onclick="goBack()">&#8592; Back to AI Features</button>
+            <div class="config-header">
+                <h2><span class="tag-fr">FR Detection</span> &mdash; Face Recognition</h2>
+            </div>
+
+            <!-- Availability banners -->
+            <div id="frInsightfaceUnavail" style="display:none" class="fr-unavail-banner">
+                InsightFace is not available. Install: <code>pip install insightface onnxruntime</code>
+            </div>
+            <div id="frYoloUnavail" style="display:none" class="fr-unavail-banner">
+                YOLO (ultralytics) not available. Install: <code>pip install ultralytics</code>
+            </div>
+            <div id="frDeepsortUnavail" style="display:none" class="fr-unavail-banner">
+                DeepSort not available. Install: <code>pip install deep-sort-realtime</code>
+            </div>
+
+            <!-- Tab bar -->
+            <div class="fr-tabs">
+                <button class="fr-tab active" id="frTab0" onclick="switchFRTab(0)">Face Data</button>
+                <button class="fr-tab" id="frTab1" onclick="switchFRTab(1)">Collect Data</button>
+                <button class="fr-tab" id="frTab2" onclick="switchFRTab(2)">Live Detection</button>
+            </div>
+
+            <!-- ── Tab 0: Face Data Management ── -->
+            <div id="frPanel0">
+                <p style="font-size:0.82em;color:#94a3b8;margin-bottom:16px;">
+                    Manage employee face image folders. Each row corresponds to a person folder under
+                    <code id="frBaseDirLabel" style="color:#60a5fa;font-size:0.95em;"></code>.
+                    Use <em>Collect Data</em> to populate a folder with 50 captured images, or place images manually and click <strong>Sync Folders → CSV</strong>.
+                </p>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px;">
+                    <button class="btn-fr-add" style="margin-bottom:0;" onclick="showAddFolderDialog()">+ Add Person Folder</button>
+                    <button id="frSyncBtn" onclick="syncFRFolders()"
+                        style="padding:10px 22px;border:2px solid rgba(96,165,250,0.4);border-radius:12px;background:rgba(96,165,250,0.07);color:#60a5fa;font-weight:600;font-size:0.88em;cursor:pointer;display:inline-flex;align-items:center;gap:8px;">
+                        &#8635; Sync Folders &#8594; CSV
+                    </button>
+                    <span id="frSyncMsg" style="font-size:0.8em;color:#64748b;"></span>
+                </div>
+                <div id="frAddFolderWrap" style="display:none; background:rgba(15,23,42,0.8); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:18px 20px; margin-bottom:18px;">
+                    <label style="font-size:0.82em;color:#94a3b8;font-weight:500;">Person Name</label>
+                    <input type="text" id="frNewPersonName" placeholder="e.g. John_Doe"
+                        style="width:320px;padding:9px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.2);color:#e2e8f0;font-size:0.9em;display:block;margin:6px 0 10px;">
+                    <button class="btn-apply btn-apply-fr" onclick="addFRFolder()" style="margin-right:8px;">Create Folder</button>
+                    <button style="padding:9px 18px;border:none;border-radius:8px;background:rgba(100,116,139,0.15);color:#64748b;cursor:pointer;font-size:0.85em;" onclick="document.getElementById('frAddFolderWrap').style.display='none'">Cancel</button>
+                </div>
+                <table class="fr-dataset-table">
+                    <thead>
+                        <tr>
+                            <th>Person Name</th>
+                            <th>Images Captured</th>
+                            <th>Folder Path</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="frDatasetBody">
+                        <tr><td colspan="4" style="color:#475569;text-align:center;padding:32px;">Loading...</td></tr>
+                    </tbody>
+                </table>
+                <div class="apply-status" id="frDataStatus"></div>
+            </div>
+
+            <!-- ── Tab 1: Collect Data ── -->
+            <div id="frPanel1" style="display:none;">
+                <p style="font-size:0.82em;color:#94a3b8;margin-bottom:16px;">
+                    Select a camera, enter the employee name, and click <strong>Start Collection</strong>.
+                    The system captures 50 face images using the YOLO face detector + DeepSORT tracker,
+                    saves them to <code style="color:#60a5fa;">autofacedata/&lt;name&gt;/</code>, and
+                    automatically updates <code style="color:#60a5fa;">autofacedata.csv</code> once 50 images are collected.
+                    You can also stop early — partial images remain on disk and will be picked up by <em>Sync Folders → CSV</em>.
+                </p>
+                <div class="fr-collect-panel">
+                    <label>Camera (RTSP URL auto-filled)</label>
+                    <select id="frCollectCamSelect" onchange="frFillRTSP()">
+                        <option value="">— Select camera —</option>
+                    </select>
+                    <label>RTSP URL</label>
+                    <input type="text" id="frCollectRTSP" placeholder="rtsp://..." />
+                    <label>Person Name (folder will be created if not exists)</label>
+                    <input type="text" id="frCollectPerson" placeholder="e.g. John_Doe" />
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;">
+                        <button class="btn-apply btn-apply-fr" id="frCollectStartBtn" onclick="startFRCollect()">&#9654; Start Collection</button>
+                        <button class="btn-apply" id="frCollectStopBtn" onclick="stopFRCollect()"
+                            style="background:#475569;color:#fff;display:none;">&#9632; Stop</button>
+                    </div>
+                    <div class="apply-status" id="frCollectStatus" style="margin-top:12px;"></div>
+                    <div id="frCollectProgress" style="display:none;margin-top:14px;">
+                        <div style="font-size:0.82em;color:#94a3b8;margin-bottom:4px;">
+                            Collecting for: <strong id="frCollectPersonLabel"></strong>
+                            &nbsp;|&nbsp; Images: <strong id="frCollectCountLabel">0</strong> / 50
+                        </div>
+                        <div class="fr-progress-bar">
+                            <div class="fr-progress-bar-inner" id="frCollectBar" style="width:0%"></div>
+                        </div>
+                        <div id="frCompletedIds" style="font-size:0.78em;color:#34d399;margin-top:4px;"></div>
+                    </div>
+                </div>
+                <div id="frCollectPreviewWrap" style="display:none;margin-top:12px;">
+                    <p style="font-size:0.8em;color:#64748b;margin-bottom:6px;">Live preview (data collection stream):</p>
+                    <img id="frCollectPreview" class="fr-live-preview" style="display:block;" alt="Collection stream" />
+                </div>
+            </div>
+
+            <!-- ── Tab 2: Live Detection ── -->
+            <div id="frPanel2" style="display:none;">
+                <p style="font-size:0.82em;color:#94a3b8;margin-bottom:16px;">
+                    Select cameras to run live face recognition on. The system uses the InsightFace AntelopeV2
+                    model and matches against the collected face embeddings. Embeddings are cached and
+                    auto-updated when new people are added.
+                </p>
+                <div class="toolbar">
+                    <div class="select-all-wrap">
+                        <input type="checkbox" id="frSelectAll" onchange="toggleFRSelectAll(this.checked)">
+                        <label for="frSelectAll">Select All</label>
+                    </div>
+                    <div class="conf-slider-wrap">
+                        <label>Recognition Threshold:</label>
+                        <input type="range" id="frThreshSlider" min="0.1" max="0.9" step="0.05" value="0.30"
+                               oninput="document.getElementById('frThreshVal').textContent=this.value">
+                        <span class="conf-val" id="frThreshVal" style="color:#34d399;">0.30</span>
+                    </div>
+                    <button class="btn-apply btn-apply-fr" id="frApplyBtn" onclick="applyFR()">Apply to Selected</button>
+                </div>
+                <div class="cam-list" id="frCamList"></div>
+                <div class="apply-status" id="frStatus"></div>
+            </div>
+        </div>
+
+        <!-- LEVEL 2E: Beta Model Detection Config -->
+        <div id="viewBeta" class="view">
+            <button class="back-btn" onclick="goBack()">&#8592; Back to AI Features</button>
+            <div class="config-header">
+                <h2><span class="tag-beta">Beta Model Detection</span> (OWLv2 / Florence-2 / Qwen)</h2>
+            </div>
+            <p style="font-size: 0.85em; color: #94a3b8; margin-bottom: 16px;">Add one or more prompts. With <strong>OWLv2</strong>, each prompt is a comma-separated label list. With <strong>Florence-2</strong> or <strong>Qwen</strong>, each prompt is an instruction describing anomalies/safety events to monitor in live video. Instruction-monitor modes raise alerts only when instructed anomalies are spotted.</p>
+            <div class="toolbar">
+                <div class="conf-slider-wrap">
+                    <label>Model:</label>
+                    <select id="betaModelSelect" onchange="updateBetaModelWarnings()" style="min-width:220px; padding:8px 12px; border-radius:8px; background:#1e293b; color:#e2e8f0; border:1px solid #334155;">
+                        <option value="owlv2">OWLv2 (open-vocabulary)</option>
+                        <option value="florence2">Florence-2 base (instruction monitoring)</option>
+                        <option value="qwen">Qwen (instruction monitoring)</option>
+                    </select>
+                </div>
+                <div class="conf-slider-wrap">
+                    <label>Confidence:</label>
+                    <input type="range" id="betaGlobalConf" min="0.05" max="0.9" step="0.05" value="0.2"
+                           oninput="document.getElementById('betaConfVal').textContent=this.value">
+                    <span class="conf-val" id="betaConfVal">0.2</span>
+                </div>
+                <button class="btn-apply btn-apply-beta" id="betaApplyBtn" onclick="applyBeta()">Apply Configuration</button>
+            </div>
+            <div id="betaPromptList"></div>
+            <button type="button" class="add-prompt-btn" onclick="addBetaPromptRow()">+ Add another prompt</button>
+            <div class="apply-status" id="betaStatus"></div>
+            <div id="betaOwlUnavailable" style="display:none; padding:16px; background: rgba(239,68,68,0.1); border-radius:12px; color:#f87171; margin-top:12px;">OWLv2 is not available. Install: pip install transformers pillow</div>
+            <div id="betaFlorenceUnavailable" style="display:none; padding:16px; background: rgba(239,68,68,0.1); border-radius:12px; color:#f87171; margin-top:12px;">Florence-2 (instruction monitoring mode) is not available. Use a recent <code>transformers</code> with Florence-2 support and place the model files in <code>hf_florence2_cache/Florence-2-base</code> (or set <code>VISION_FLORENCE2_LOCAL_PATH</code>).</div>
+            <div id="betaQwenUnavailable" style="display:none; padding:16px; background: rgba(239,68,68,0.1); border-radius:12px; color:#f87171; margin-top:12px;">Qwen (instruction monitoring mode) is not available. Ensure local Qwen cache is mounted and <code>VISION_QWEN25VL_LOCAL_PATH</code> is set.</div>
+        </div>
+    </div>
+
+    <script>
+        let cameras = [];
+        let configs = {};
+        let betaPrompts = [];
+        let betaConfidence = 0.2;
+        let owlv2Available = false;
+        let florence2Available = false;
+        let qwenAvailable = false;
+        let anprAvailable = false;
+        let anprStatus = {};
+
+        function updateBetaModelWarnings() {
+            const sel = document.getElementById('betaModelSelect');
+            if (!sel) return;
+            const v = sel.value;
+            const owlEl = document.getElementById('betaOwlUnavailable');
+            const floEl = document.getElementById('betaFlorenceUnavailable');
+            const qweEl = document.getElementById('betaQwenUnavailable');
+            if (owlEl) owlEl.style.display = (v === 'owlv2' && !owlv2Available) ? 'block' : 'none';
+            if (floEl) floEl.style.display = (v === 'florence2' && !florence2Available) ? 'block' : 'none';
+            if (qweEl) qweEl.style.display = (v === 'qwen' && !qwenAvailable) ? 'block' : 'none';
+            renderBetaPrompts();
+        }
+
+        function betaPromptUiLabel() {
+            const model = (document.getElementById('betaModelSelect') || {}).value || 'owlv2';
+            if (model === 'florence2' || model === 'qwen') return 'Prompt (instruction)';
+            return 'Prompt (comma-separated labels)';
+        }
+
+        function betaPromptUiPlaceholder() {
+            const model = (document.getElementById('betaModelSelect') || {}).value || 'owlv2';
+            if (model === 'florence2' || model === 'qwen') {
+                return 'e.g. You are an intelligent warehouse monitoring system. Watch for dropped boxes, no hard-hat/no vest PPE violations, unsafe ladder usage, and aisle obstructions. Raise alert only when anomaly is visible.';
+            }
+            return 'e.g. lab coat, goggles, boots, head cap, Fire, Smoke';
+        }
+
+        async function loadData() {
+            try {
+                const camRes = await fetch('/api/cameras');
+                cameras = await camRes.json();
+                const cfgPromises = cameras.map(c =>
+                    fetch('/api/detection/config/' + c.camera_id).then(r => r.json()).then(cfg => ({ id: c.camera_id, cfg }))
+                );
+                const cfgResults = await Promise.all(cfgPromises);
+                configs = {};
+                cfgResults.forEach(r => configs[r.id] = r.cfg);
+                const betaRes = await fetch('/api/detection/beta/config');
+                const betaData = await betaRes.json();
+                try {
+                    const anprRes = await fetch('/api/detection/anpr/status');
+                    anprStatus = await anprRes.json();
+                    anprAvailable = !!(anprStatus.libreyolo_available && anprStatus.paddleocr_available && anprStatus.plate_model_found && anprStatus.vehicle_model_found);
+                } catch (_) {
+                    anprStatus = {};
+                    anprAvailable = false;
+                }
+                owlv2Available = betaData.owlv2_available === true;
+                florence2Available = betaData.florence2_available === true;
+                qwenAvailable = betaData.qwen_available === true;
+                betaPrompts = (betaData.prompts || []).map(p => ({ prompt_text: p.prompt_text || '', camera_ids: p.camera_ids || [] }));
+                if (betaPrompts.length === 0) betaPrompts.push({ prompt_text: '', camera_ids: [] });
+                betaConfidence = betaData.confidence != null ? betaData.confidence : 0.2;
+                const bm = (betaData.beta_model || 'owlv2').toLowerCase();
+                const sel = document.getElementById('betaModelSelect');
+                if (sel) sel.value = (bm === 'florence2' || bm === 'qwen') ? bm : 'owlv2';
+                updateBetaModelWarnings();
+                updateTypeCards();
+                applySavedConfidenceToSliders();
+                renderHCList();
+                renderEEList();
+                renderFGList();
+                renderPPEList();
+                renderFSList();
+                renderANPRList();
+                renderBetaPrompts();
+                document.getElementById('betaGlobalConf').value = betaConfidence;
+                document.getElementById('betaConfVal').textContent = betaConfidence;
+            } catch (e) {
+                console.error('Load error:', e);
+            }
+        }
+
+        function applySavedConfidenceToSliders() {
+            const defs = { headcount: 0.1, entryexit: 0.5, flapgate: 0.65, ppe: 0.4, firesmoke: 0.35, anpr: 0.25 };
+            ['headcount', 'entryexit', 'flapgate', 'ppe', 'firesmoke', 'anpr'].forEach(type => {
+                const prefix = type === 'headcount' ? 'hc' : type === 'entryexit' ? 'ee' : type === 'flapgate' ? 'fg' : type === 'ppe' ? 'ppe' : type === 'firesmoke' ? 'fs' : 'anpr';
+                let val = defs[type];
+                let speedThreshold = null;
+                for (const cam of cameras) {
+                    const v = configs[cam.camera_id]?.[type]?.config?.confidence;
+                    if (v != null) { val = v; break; }
+                }
+                const el = document.getElementById(prefix + 'GlobalConf');
+                const lbl = document.getElementById(prefix + 'ConfVal');
+                if (el && lbl) { el.value = val; lbl.textContent = val; }
+                if (type === 'anpr') {
+                    for (const cam of cameras) {
+                        const v = configs[cam.camera_id]?.anpr?.config?.speed_threshold_kmh;
+                        if (v != null) { speedThreshold = v; break; }
+                    }
+                    const st = document.getElementById('anprSpeedThreshold');
+                    if (st && speedThreshold != null) st.value = speedThreshold;
+                }
+            });
+        }
+
+        function updateTypeCards() {
+            let hcActive = 0, eeActive = 0, fgActive = 0, ppeActive = 0, fsActive = 0, anprActive = 0, betaActive = 0;
+            cameras.forEach(c => {
+                if (c.headcount_active) hcActive++;
+                if (c.entryexit_active) eeActive++;
+                if (c.flapgate_active) fgActive++;
+                if (c.ppe_active) ppeActive++;
+                if (c.fire_smoke_active) fsActive++;
+                if (c.anpr_active) anprActive++;
+                if (c.beta_active) betaActive++;
+            });
+            document.getElementById('hcActiveCount').textContent = hcActive;
+            document.getElementById('hcTotalCams').textContent = cameras.length;
+            document.getElementById('eeActiveCount').textContent = eeActive;
+            document.getElementById('eeTotalCams').textContent = cameras.length;
+            document.getElementById('fgActiveCount').textContent = fgActive;
+            document.getElementById('fgTotalCams').textContent = cameras.length;
+            document.getElementById('ppeActiveCount').textContent = ppeActive;
+            document.getElementById('ppeTotalCams').textContent = cameras.length;
+            document.getElementById('fsActiveCount').textContent = fsActive;
+            document.getElementById('fsTotalCams').textContent = cameras.length;
+            document.getElementById('anprActiveCount').textContent = anprActive;
+            document.getElementById('anprTotalCams').textContent = cameras.length;
+            document.getElementById('betaActiveCount').textContent = betaActive;
+            document.getElementById('betaTotalCams').textContent = cameras.length;
+        }
+
+        function openConfig(type) {
+            document.getElementById('viewTypes').classList.remove('active');
+            if (type === 'headcount') document.getElementById('viewHC').classList.add('active');
+            else if (type === 'entryexit') document.getElementById('viewEE').classList.add('active');
+            else if (type === 'flapgate') document.getElementById('viewFG').classList.add('active');
+            else if (type === 'ppe') document.getElementById('viewPPE').classList.add('active');
+            else if (type === 'firesmoke') document.getElementById('viewFS').classList.add('active');
+            else if (type === 'anpr') document.getElementById('viewANPR').classList.add('active');
+            else if (type === 'beta') document.getElementById('viewBeta').classList.add('active');
+        }
+
+        function goBack() {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById('viewTypes').classList.add('active');
+            loadData();
+        }
+
+        /* ─── HEAD COUNT LIST ─── */
+        function renderHCList() {
+            const list = document.getElementById('hcCamList');
+            if (cameras.length === 0) {
+                list.innerHTML = '<div class="empty-state"><h3>No cameras found</h3><p><a href="/">Add cameras first</a></p></div>';
+                return;
+            }
+            list.innerHTML = cameras.map(cam => {
+                const cid = cam.camera_id;
+                const isOn = cam.headcount_active;
+                const isLive = cam.status === 'active';
+                return `
+                <div class="cam-item ${isOn ? 'selected' : ''}" onclick="toggleCamCheck('hc_chk_${cid}')">
+                    <input type="checkbox" id="hc_chk_${cid}" data-cid="${cid}" class="hc-chk" ${isOn ? 'checked' : ''} onclick="event.stopPropagation()">
+                    <div class="cam-dot ${isLive ? 'on' : 'off'}"></div>
+                    <div class="cam-item-info">
+                        <div class="cam-item-name">${cam.name || cid}</div>
+                        <div class="cam-item-url">${cam.rtsp_url}</div>
+                    </div>
+                    <div class="cam-item-badges">
+                        <span class="mini-badge ${isOn ? 'mb-on' : 'mb-off'}">${isOn ? 'Active' : 'Off'}</span>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        /* ─── ENTRY/EXIT LIST ─── */
+        function renderEEList() {
+            const list = document.getElementById('eeCamList');
+            if (cameras.length === 0) {
+                list.innerHTML = '<div class="empty-state"><h3>No cameras found</h3><p><a href="/">Add cameras first</a></p></div>';
+                return;
+            }
+            list.innerHTML = cameras.map(cam => {
+                const cid = cam.camera_id;
+                const isOn = cam.entryexit_active;
+                const isLive = cam.status === 'active';
+                const cfg = configs[cid]?.entryexit?.config || {};
+                const hasZones = cfg.entry_zone && cfg.entry_zone.length >= 3;
+                return `
+                <div class="cam-item ${isOn ? 'selected-ee' : ''}" onclick="toggleCamCheck('ee_chk_${cid}')">
+                    <input type="checkbox" id="ee_chk_${cid}" data-cid="${cid}" class="ee-chk" ${isOn ? 'checked' : ''} onclick="event.stopPropagation()">
+                    <div class="cam-dot ${isLive ? 'on' : 'off'}"></div>
+                    <div class="cam-item-info">
+                        <div class="cam-item-name">${cam.name || cid}</div>
+                        <div class="cam-item-url">${cam.rtsp_url}</div>
+                    </div>
+                    <div class="cam-item-badges">
+                        <span class="mini-badge ${isOn ? 'mb-on' : 'mb-off'}">${isOn ? 'Active' : 'Off'}</span>
+                        <span class="mini-badge ${hasZones ? 'mb-zone-ok' : 'mb-zone-no'}">${hasZones ? 'Zones Set' : 'No Zones'}</span>
+                        <a href="/zone-config/${cid}" class="zone-link" onclick="event.stopPropagation()">Config</a>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function toggleCamCheck(id) {
+            const el = document.getElementById(id);
+            el.checked = !el.checked;
+            const item = el.closest('.cam-item');
+            if (id.startsWith('hc_')) item.classList.toggle('selected', el.checked);
+            else if (id.startsWith('ee_')) item.classList.toggle('selected-ee', el.checked);
+            else if (id.startsWith('fg_')) item.classList.toggle('selected-fg', el.checked);
+            else if (id.startsWith('ppe_')) item.classList.toggle('selected-ppe', el.checked);
+            else if (id.startsWith('fs_')) item.classList.toggle('selected-fs', el.checked);
+            else if (id.startsWith('anpr_')) item.classList.toggle('selected-anpr', el.checked);
+            else if (id.startsWith('beta_')) item.classList.toggle('selected-beta', el.checked);
+        }
+
+        function toggleBetaCam(promptIdx, cameraId) {
+            const p = betaPrompts[promptIdx];
+            const i = p.camera_ids.indexOf(cameraId);
+            if (i >= 0) p.camera_ids.splice(i, 1);
+            else p.camera_ids.push(cameraId);
+            renderBetaPrompts();
+        }
+
+        function addBetaPromptRow() {
+            betaPrompts.push({ prompt_text: '', camera_ids: [] });
+            renderBetaPrompts();
+        }
+
+        function removeBetaPromptRow(idx) {
+            betaPrompts.splice(idx, 1);
+            if (betaPrompts.length === 0) betaPrompts.push({ prompt_text: '', camera_ids: [] });
+            renderBetaPrompts();
+        }
+
+        function renderBetaPrompts() {
+            const list = document.getElementById('betaPromptList');
+            if (!list) return;
+            list.innerHTML = betaPrompts.map((p, idx) => {
+                const camChips = cameras.map(c => {
+                    const sel = p.camera_ids.indexOf(c.camera_id) >= 0;
+                    const cidEsc = (c.camera_id || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                    return `<span class="cam-chip ${sel ? 'selected' : ''}" onclick="toggleBetaCam(${idx}, '${cidEsc}')">${escapeHtml(c.name || c.camera_id)}</span>`;
+                }).join('');
+                const valEsc = escapeHtml(p.prompt_text || '');
+                return `
+                <div class="prompt-row" data-idx="${idx}">
+                    <div class="prompt-input-wrap">
+                        <label>${betaPromptUiLabel()}</label>
+                        <input type="text" class="beta-prompt-input" data-idx="${idx}" value="${valEsc}" placeholder="${escapeHtml(betaPromptUiPlaceholder())}" oninput="betaPrompts[${idx}].prompt_text=this.value">
+                    </div>
+                    <div class="prompt-cams">
+                        <label>Cameras for this prompt</label>
+                        <div class="cam-chips">${camChips}</div>
+                    </div>
+                    <button type="button" class="btn-remove-prompt" onclick="removeBetaPromptRow(${idx})">Remove</button>
+                </div>`;
+            }).join('');
+        }
+        function escapeHtml(s) {
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        async function applyBeta() {
+            const model = document.getElementById('betaModelSelect').value;
+            if (model === 'owlv2' && !owlv2Available) {
+                showApplyStatus('betaStatus', 'OWLv2 not available. Install: pip install transformers pillow', 'err');
+                return;
+            }
+            if (model === 'florence2' && !florence2Available) {
+                showApplyStatus('betaStatus', 'Florence-2 not available. Check hf_florence2_cache/Florence-2-base and transformers version.', 'err');
+                return;
+            }
+            if (model === 'qwen' && !qwenAvailable) {
+                showApplyStatus('betaStatus', 'Qwen not available. Check VISION_QWEN25VL_LOCAL_PATH and model mount.', 'err');
+                return;
+            }
+            betaConfidence = parseFloat(document.getElementById('betaGlobalConf').value) || 0.2;
+            const prompts = betaPrompts.map(p => ({
+                prompt_text: (p.prompt_text || '').trim(),
+                camera_ids: p.camera_ids || []
+            })).filter(p => p.prompt_text || (p.camera_ids && p.camera_ids.length > 0));
+            const btn = document.getElementById('betaApplyBtn');
+            btn.disabled = true;
+            showApplyStatus('betaStatus', 'Applying Beta configuration...', 'prog');
+            try {
+                const res = await fetch('/api/detection/beta/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompts, confidence: betaConfidence, model })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    showApplyStatus('betaStatus', data.error || 'Failed', 'err');
+                    return;
+                }
+                if (data.start_errors && data.start_errors.length > 0) {
+                    const msg = 'Applied with startup errors: ' + data.start_errors.map(e => `${e.camera_id} (${e.status})`).join(', ');
+                    showApplyStatus('betaStatus', msg, 'err');
+                } else {
+                    showApplyStatus('betaStatus', 'Beta configuration applied successfully.', 'ok');
+                }
+                setTimeout(loadData, 800);
+            } catch (e) {
+                showApplyStatus('betaStatus', 'Error: ' + e.message, 'err');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function toggleSelectAll(type, checked) {
+            const clsMap = { hc: '.hc-chk', ee: '.ee-chk', fg: '.fg-chk', ppe: '.ppe-chk', fs: '.fs-chk', anpr: '.anpr-chk' };
+            const selMap = { hc: 'selected', ee: 'selected-ee', fg: 'selected-fg', ppe: 'selected-ppe', fs: 'selected-fs', anpr: 'selected-anpr' };
+            document.querySelectorAll(clsMap[type]).forEach(chk => {
+                chk.checked = checked;
+                chk.closest('.cam-item').classList.toggle(selMap[type], checked);
+            });
+        }
+
+        /* ─── APPLY HEAD COUNT ─── */
+        async function applyHC() {
+            const conf = parseFloat(document.getElementById('hcGlobalConf').value) || 0.1;
+            const checked = new Set();
+            document.querySelectorAll('.hc-chk:checked').forEach(el => checked.add(el.dataset.cid));
+
+            const btn = document.getElementById('hcApplyBtn');
+            btn.disabled = true;
+            showApplyStatus('hcStatus', 'Applying head count configuration...', 'prog');
+
+            let ok = 0, fail = 0;
+            for (const cam of cameras) {
+                const cid = cam.camera_id;
+                const want = checked.has(cid);
+                const has = cam.headcount_active;
+                try {
+                    if (want) {
+                        // Enable or update confidence on already-active cameras
+                        await fetch('/api/detection/headcount/enable/' + cid, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ confidence: conf })
+                        });
+                        ok++;
+                    } else if (!want && has) {
+                        await fetch('/api/detection/headcount/disable/' + cid, { method: 'POST' });
+                        ok++;
+                    }
+                } catch (e) { fail++; }
+            }
+            btn.disabled = false;
+            if (fail === 0) showApplyStatus('hcStatus', `Configuration applied successfully. ${ok} camera(s) updated.`, 'ok');
+            else showApplyStatus('hcStatus', `Completed with ${fail} error(s). ${ok} camera(s) updated.`, 'err');
+            setTimeout(loadData, 800);
+        }
+
+        /* ─── APPLY ENTRY/EXIT ─── */
+        async function applyEE() {
+            const conf = parseFloat(document.getElementById('eeGlobalConf').value) || 0.5;
+            const checked = new Set();
+            document.querySelectorAll('.ee-chk:checked').forEach(el => checked.add(el.dataset.cid));
+
+            const btn = document.getElementById('eeApplyBtn');
+            btn.disabled = true;
+            showApplyStatus('eeStatus', 'Applying entry/exit configuration...', 'prog');
+
+            let ok = 0, fail = 0, noZone = 0;
+            for (const cam of cameras) {
+                const cid = cam.camera_id;
+                const want = checked.has(cid);
+                const has = cam.entryexit_active;
+                const cfg = configs[cid]?.entryexit?.config || {};
+                const hasZones = cfg.entry_zone && cfg.entry_zone.length >= 3;
+
+                try {
+                    if (want) {
+                        // Enable or update confidence on already-active cameras
+                        if (!hasZones) { noZone++; continue; }
+                        await fetch('/api/detection/entryexit/enable/' + cid, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                entry_zone: cfg.entry_zone,
+                                exit_zone: cfg.exit_zone,
+                                canvas_width: cfg.canvas_width || 800,
+                                canvas_height: cfg.canvas_height || 450,
+                                confidence: conf
+                            })
+                        });
+                        ok++;
+                    } else if (!want && has) {
+                        await fetch('/api/detection/entryexit/disable/' + cid, { method: 'POST' });
+                        ok++;
+                    }
+                } catch (e) { fail++; }
+            }
+            btn.disabled = false;
+            let msg = `${ok} camera(s) updated.`;
+            if (noZone > 0) msg += ` ${noZone} camera(s) skipped (zones not configured).`;
+            if (fail > 0) msg += ` ${fail} error(s).`;
+            showApplyStatus('eeStatus', msg, (fail > 0 ? 'err' : (noZone > 0 ? 'err' : 'ok')));
+            setTimeout(loadData, 800);
+        }
+
+        /* ─── FLAP GATE LIST ─── */
+        function renderFGList() {
+            const list = document.getElementById('fgCamList');
+            if (cameras.length === 0) {
+                list.innerHTML = '<div class="empty-state"><h3>No cameras found</h3><p><a href="/">Add cameras first</a></p></div>';
+                return;
+            }
+            list.innerHTML = cameras.map(cam => {
+                const cid = cam.camera_id;
+                const isOn = cam.flapgate_active;
+                const isLive = cam.status === 'active';
+                const cfg = configs[cid]?.flapgate?.config || {};
+                const gz = cfg.gate_zones || {};
+                const hasZones = gz['1'] && gz['1'].length >= 3 && gz['2'] && gz['2'].length >= 3 && gz['3'] && gz['3'].length >= 3;
+                return `
+                <div class="cam-item ${isOn ? 'selected-fg' : ''}" onclick="toggleCamCheck('fg_chk_${cid}')">
+                    <input type="checkbox" id="fg_chk_${cid}" data-cid="${cid}" class="fg-chk" ${isOn ? 'checked' : ''} onclick="event.stopPropagation()">
+                    <div class="cam-dot ${isLive ? 'on' : 'off'}"></div>
+                    <div class="cam-item-info">
+                        <div class="cam-item-name">${cam.name || cid}</div>
+                        <div class="cam-item-url">${cam.rtsp_url}</div>
+                    </div>
+                    <div class="cam-item-badges">
+                        <span class="mini-badge ${isOn ? 'mb-on' : 'mb-off'}">${isOn ? 'Active' : 'Off'}</span>
+                        <span class="mini-badge ${hasZones ? 'mb-zone-ok' : 'mb-zone-no'}">${hasZones ? '3 Zones Set' : 'No Zones'}</span>
+                        <a href="/flapgate-zone-config/${cid}" class="zone-link" onclick="event.stopPropagation()">Config</a>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        /* ─── APPLY FLAP GATE ─── */
+        async function applyFG() {
+            const conf = parseFloat(document.getElementById('fgGlobalConf').value) || 0.65;
+            const checked = new Set();
+            document.querySelectorAll('.fg-chk:checked').forEach(el => checked.add(el.dataset.cid));
+
+            const btn = document.getElementById('fgApplyBtn');
+            btn.disabled = true;
+            showApplyStatus('fgStatus', 'Applying flap gate configuration...', 'prog');
+
+            let ok = 0, fail = 0, noZone = 0;
+            for (const cam of cameras) {
+                const cid = cam.camera_id;
+                const want = checked.has(cid);
+                const has = cam.flapgate_active;
+                const cfg = configs[cid]?.flapgate?.config || {};
+                const gz = cfg.gate_zones || {};
+                const hasZones = gz['1'] && gz['1'].length >= 3 && gz['2'] && gz['2'].length >= 3 && gz['3'] && gz['3'].length >= 3;
+
+                try {
+                    if (want) {
+                        // Enable or update confidence on already-active cameras
+                        if (!hasZones) { noZone++; continue; }
+                        await fetch('/api/detection/flapgate/enable/' + cid, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                gate_zones: gz,
+                                canvas_width: cfg.canvas_width || 800,
+                                canvas_height: cfg.canvas_height || 450,
+                                confidence: conf
+                            })
+                        });
+                        ok++;
+                    } else if (!want && has) {
+                        await fetch('/api/detection/flapgate/disable/' + cid, { method: 'POST' });
+                        ok++;
+                    }
+                } catch (e) { fail++; }
+            }
+            btn.disabled = false;
+            let msg = `${ok} camera(s) updated.`;
+            if (noZone > 0) msg += ` ${noZone} camera(s) skipped (gate zones not configured).`;
+            if (fail > 0) msg += ` ${fail} error(s).`;
+            showApplyStatus('fgStatus', msg, (fail > 0 ? 'err' : (noZone > 0 ? 'err' : 'ok')));
+            setTimeout(loadData, 800);
+        }
+
+        /* ─── PPE LIST ─── */
+        function renderPPEList() {
+            const list = document.getElementById('ppeCamList');
+            if (cameras.length === 0) {
+                list.innerHTML = '<div class="empty-state"><h3>No cameras found</h3><p><a href="/">Add cameras first</a></p></div>';
+                return;
+            }
+            list.innerHTML = cameras.map(cam => {
+                const cid = cam.camera_id;
+                const isOn = cam.ppe_active;
+                const isLive = cam.status === 'active';
+                return `
+                <div class="cam-item ${isOn ? 'selected-ppe' : ''}" onclick="toggleCamCheck('ppe_chk_${cid}')">
+                    <input type="checkbox" id="ppe_chk_${cid}" data-cid="${cid}" class="ppe-chk" ${isOn ? 'checked' : ''} onclick="event.stopPropagation()">
+                    <div class="cam-dot ${isLive ? 'on' : 'off'}"></div>
+                    <div class="cam-item-info">
+                        <div class="cam-item-name">${cam.name || cid}</div>
+                        <div class="cam-item-url">${cam.rtsp_url}</div>
+                    </div>
+                    <div class="cam-item-badges">
+                        <span class="mini-badge ${isOn ? 'mb-on' : 'mb-off'}">${isOn ? 'Active' : 'Off'}</span>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        /* ─── APPLY PPE ─── */
+        async function applyPPE() {
+            const conf = parseFloat(document.getElementById('ppeGlobalConf').value) || 0.4;
+            const checked = new Set();
+            document.querySelectorAll('.ppe-chk:checked').forEach(el => checked.add(el.dataset.cid));
+
+            const btn = document.getElementById('ppeApplyBtn');
+            btn.disabled = true;
+            showApplyStatus('ppeStatus', 'Applying PPE detection configuration...', 'prog');
+
+            let ok = 0, fail = 0;
+            for (const cam of cameras) {
+                const cid = cam.camera_id;
+                const want = checked.has(cid);
+                const has = cam.ppe_active;
+                try {
+                    if (want) {
+                        // Enable or update confidence on already-active cameras
+                        await fetch('/api/detection/ppe/enable/' + cid, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ confidence: conf })
+                        });
+                        ok++;
+                    } else if (!want && has) {
+                        await fetch('/api/detection/ppe/disable/' + cid, { method: 'POST' });
+                        ok++;
+                    }
+                } catch (e) { fail++; }
+            }
+            btn.disabled = false;
+            if (fail === 0) showApplyStatus('ppeStatus', `Configuration applied successfully. ${ok} camera(s) updated.`, 'ok');
+            else showApplyStatus('ppeStatus', `Completed with ${fail} error(s). ${ok} camera(s) updated.`, 'err');
+            setTimeout(loadData, 800);
+        }
+
+        /* ─── FIRE/SMOKE LIST ─── */
+        function renderFSList() {
+            const list = document.getElementById('fsCamList');
+            if (cameras.length === 0) {
+                list.innerHTML = '<div class="empty-state"><h3>No cameras found</h3><p><a href="/">Add cameras first</a></p></div>';
+                return;
+            }
+            list.innerHTML = cameras.map(cam => {
+                const cid = cam.camera_id;
+                const isOn = cam.fire_smoke_active;
+                const isLive = cam.status === 'active';
+                return `
+                <div class="cam-item ${isOn ? 'selected-fs' : ''}" onclick="toggleCamCheck('fs_chk_${cid}')">
+                    <input type="checkbox" id="fs_chk_${cid}" data-cid="${cid}" class="fs-chk" ${isOn ? 'checked' : ''} onclick="event.stopPropagation()">
+                    <div class="cam-dot ${isLive ? 'on' : 'off'}"></div>
+                    <div class="cam-item-info">
+                        <div class="cam-item-name">${cam.name || cid}</div>
+                        <div class="cam-item-url">${cam.rtsp_url}</div>
+                    </div>
+                    <div class="cam-item-badges">
+                        <span class="mini-badge ${isOn ? 'mb-on' : 'mb-off'}">${isOn ? 'Active' : 'Off'}</span>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        /* ─── APPLY FIRE/SMOKE ─── */
+        async function applyFS() {
+            const conf = parseFloat(document.getElementById('fsGlobalConf').value) || 0.35;
+            const checked = new Set();
+            document.querySelectorAll('.fs-chk:checked').forEach(el => checked.add(el.dataset.cid));
+            const btn = document.getElementById('fsApplyBtn');
+            btn.disabled = true;
+            showApplyStatus('fsStatus', 'Applying fire/smoke detection configuration...', 'prog');
+            let ok = 0, fail = 0;
+            for (const cam of cameras) {
+                const cid = cam.camera_id;
+                const want = checked.has(cid);
+                const has = cam.fire_smoke_active;
+                try {
+                    if (want) {
+                        await fetch('/api/detection/firesmoke/enable/' + cid, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ confidence: conf })
+                        });
+                        ok++;
+                    } else if (!want && has) {
+                        await fetch('/api/detection/firesmoke/disable/' + cid, { method: 'POST' });
+                        ok++;
+                    }
+                } catch (e) { fail++; }
+            }
+            btn.disabled = false;
+            if (fail === 0) showApplyStatus('fsStatus', `Configuration applied successfully. ${ok} camera(s) updated.`, 'ok');
+            else showApplyStatus('fsStatus', `Completed with ${fail} error(s). ${ok} camera(s) updated.`, 'err');
+            setTimeout(loadData, 800);
+        }
+
+        /* ─── ANPR LIST ─── */
+        function renderANPRList() {
+            const warn = document.getElementById('anprUnavailable');
+            if (warn) {
+                if (anprAvailable) {
+                    warn.style.display = 'none';
+                    warn.textContent = '';
+                } else {
+                    const reasons = [];
+                    if (!anprStatus.libreyolo_available) reasons.push('LibreYOLO package unavailable');
+                    if (!anprStatus.paddleocr_available) reasons.push('PaddleOCR unavailable');
+                    if (anprStatus.plate_model_found === false) reasons.push('plate model missing');
+                    if (anprStatus.vehicle_model_found === false) reasons.push('vehicle model missing');
+                    warn.textContent = 'ANPR unavailable: ' + (reasons.join(', ') || 'status check failed') + '.';
+                    warn.style.display = 'block';
+                }
+            }
+            const list = document.getElementById('anprCamList');
+            if (cameras.length === 0) {
+                list.innerHTML = '<div class="empty-state"><h3>No cameras found</h3><p><a href="/">Add cameras first</a></p></div>';
+                return;
+            }
+            list.innerHTML = cameras.map(cam => {
+                const cid = cam.camera_id;
+                const isOn = cam.anpr_active;
+                const isLive = cam.status === 'active';
+                return `
+                <div class="cam-item ${isOn ? 'selected-anpr' : ''}" onclick="toggleCamCheck('anpr_chk_${cid}')">
+                    <input type="checkbox" id="anpr_chk_${cid}" data-cid="${cid}" class="anpr-chk" ${isOn ? 'checked' : ''} onclick="event.stopPropagation()">
+                    <div class="cam-dot ${isLive ? 'on' : 'off'}"></div>
+                    <div class="cam-item-info">
+                        <div class="cam-item-name">${escapeHtml(cam.name || cid)}</div>
+                        <div class="cam-item-url">${escapeHtml(cam.rtsp_url)}</div>
+                    </div>
+                    <div class="cam-item-badges">
+                        <span class="mini-badge ${isOn ? 'mb-on' : 'mb-off'}">${isOn ? 'Active' : 'Off'}</span>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        /* ─── APPLY ANPR ─── */
+        async function applyANPR() {
+            if (!anprAvailable) {
+                showApplyStatus('anprStatus', 'ANPR is unavailable. Check LibreYOLO, PaddleOCR, and model files in models/.', 'err');
+                return;
+            }
+            const conf = parseFloat(document.getElementById('anprGlobalConf').value) || 0.25;
+            const speedThreshold = parseFloat(document.getElementById('anprSpeedThreshold').value) || 50;
+            const checked = new Set();
+            document.querySelectorAll('.anpr-chk:checked').forEach(el => checked.add(el.dataset.cid));
+            const btn = document.getElementById('anprApplyBtn');
+            btn.disabled = true;
+            showApplyStatus('anprStatus', 'Applying ANPR configuration...', 'prog');
+            let ok = 0, fail = 0;
+            for (const cam of cameras) {
+                const cid = cam.camera_id;
+                const want = checked.has(cid);
+                const has = cam.anpr_active;
+                try {
+                    if (want) {
+                        const res = await fetch('/api/detection/anpr/enable/' + encodeURIComponent(cid), {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ confidence: conf, speed_threshold_kmh: speedThreshold })
+                        });
+                        if (!res.ok) throw new Error((await res.json()).error || `HTTP ${res.status}`);
+                        ok++;
+                    } else if (!want && has) {
+                        const res = await fetch('/api/detection/anpr/disable/' + encodeURIComponent(cid), { method: 'POST' });
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        ok++;
+                    }
+                } catch (e) {
+                    fail++;
+                    console.error('ANPR apply failed for', cid, e);
+                }
+            }
+            btn.disabled = false;
+            if (fail === 0) showApplyStatus('anprStatus', `ANPR configuration applied. ${ok} camera(s) updated.`, 'ok');
+            else showApplyStatus('anprStatus', `Completed with ${fail} error(s). ${ok} camera(s) updated.`, 'err');
+            setTimeout(loadData, 800);
+        }
+
+        function showApplyStatus(id, msg, type) {
+            const el = document.getElementById(id);
+            el.textContent = msg;
+            el.className = 'apply-status ' + type;
+        }
+
+        /* Initial loadData() runs after FR extension script wraps loadData + updateTypeCards */
+    </script>
+
+    <!-- ─── FR Detection Extension ─── -->
+    <script>
+        // ── State ──
+        let frCameras = [];
+        let frActiveCameras = [];
+        let frCollectSessionId = null;
+        let frCollectPollTimer = null;
+        let frAvailable = { insightface: false, yolo: false, deepsort: false };
+
+        // ── Wrap openConfig to handle 'fr' ──
+        // Use function expressions (not declarations) so they are NOT hoisted — this lets
+        // the _orig* variables correctly capture the originals from the first <script> block.
+        const _origOpenConfig = openConfig;
+        window.openConfig = function(type) {
+            if (type === 'fr') {
+                document.getElementById('viewTypes').classList.remove('active');
+                document.getElementById('viewFR').classList.add('active');
+                // Auto-sync folders → CSV on every open, then refresh table
+                syncFRFolders(true);
+                return;
+            }
+            _origOpenConfig(type);
+        };
+
+        // ── Wrap goBack to clear FR state ──
+        const _origGoBack = goBack;
+        window.goBack = function() {
+            stopFRCollectSilent();
+            _origGoBack();
+        };
+
+        // ── Wrap updateTypeCards to include FR ──
+        const _origUpdateTypeCards = updateTypeCards;
+        window.updateTypeCards = function() {
+            _origUpdateTypeCards();
+            const total = (typeof cameras !== 'undefined') ? cameras.length : 0;
+            document.getElementById('frActiveCount').textContent = frActiveCameras.length;
+            document.getElementById('frTotalCams').textContent = total;
+        };
+
+        // ── Wrap loadData: refresh FR active list from server before updating type cards ──
+        // Without this, "Back to AI Features" / full page reload left frActiveCameras=[] so the
+        // FR card always showed 0 ACTIVE even when /api/fr/detection/enable succeeded.
+        const _origLoadData = loadData;
+        window.loadData = async function() {
+            try {
+                const frs = await fetch('/api/fr/status');
+                const fd = await frs.json();
+                frActiveCameras = fd.active_cameras || [];
+                console.log('[FR UI] loadData: active_cameras from GET /api/fr/status →', frActiveCameras.length, frActiveCameras);
+            } catch (e) {
+                console.warn('[FR UI] loadData: GET /api/fr/status failed — FR card count may be stale:', e);
+            }
+            await _origLoadData();
+        };
+
+        // ── Wrap toggleCamCheck to handle fr_ prefix ──
+        const _origToggleCamCheck = toggleCamCheck;
+        window.toggleCamCheck = function(id) {
+            if (id.startsWith('fr_')) {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.checked = !el.checked;
+                el.closest('.cam-item').classList.toggle('selected-fr', el.checked);
+                return;
+            }
+            _origToggleCamCheck(id);
+        };
+
+        async function syncFRFolders(silent = false) {
+            const btn = document.getElementById('frSyncBtn');
+            const msg = document.getElementById('frSyncMsg');
+            if (btn) { btn.disabled = true; btn.textContent = '⟳ Syncing...'; }
+            if (msg && !silent) msg.textContent = 'Scanning folders…';
+            try {
+                const res = await fetch('/api/fr/scan_and_sync', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    if (msg) msg.textContent = data.message || `Synced ${data.total_synced} folder(s).`;
+                } else {
+                    if (msg) msg.textContent = 'Sync error: ' + (data.error || 'unknown');
+                }
+            } catch (e) {
+                if (msg) msg.textContent = 'Sync failed: ' + e.message;
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = '↻ Sync Folders → CSV'; }
+                await loadFRData();
+            }
+        }
+
+        async function loadFRData() {
+            try {
+                const [statusRes, datasetsRes, camRes] = await Promise.all([
+                    fetch('/api/fr/status'),
+                    fetch('/api/fr/datasets'),
+                    fetch('/api/cameras'),
+                ]);
+                const statusData = await statusRes.json();
+                const datasetsData = await datasetsRes.json();
+                frCameras = await camRes.json();
+
+                frActiveCameras = statusData.active_cameras || [];
+                frAvailable = {
+                    insightface: statusData.insightface_available,
+                    yolo: statusData.yolo_available,
+                    deepsort: statusData.deepsort_available,
+                };
+
+                document.getElementById('frInsightfaceUnavail').style.display =
+                    frAvailable.insightface ? 'none' : 'block';
+                document.getElementById('frYoloUnavail').style.display =
+                    frAvailable.yolo ? 'none' : 'block';
+                document.getElementById('frDeepsortUnavail').style.display =
+                    frAvailable.deepsort ? 'none' : 'block';
+
+                const baseDirLabel = document.getElementById('frBaseDirLabel');
+                if (baseDirLabel) baseDirLabel.textContent = datasetsData.base_dir || '';
+
+                renderFRDatasets(datasetsData.datasets || []);
+                renderFRCamList();
+                fillFRCollectCamSelect();
+                // Keep main "AI Features" grid FR stats in sync (same source as loadData wrap)
+                if (typeof window.updateTypeCards === 'function') {
+                    window.updateTypeCards();
+                } else {
+                    document.getElementById('frActiveCount').textContent = frActiveCameras.length;
+                    document.getElementById('frTotalCams').textContent = frCameras.length;
+                }
+                console.log('[FR UI] loadFRData: active_cameras=', frActiveCameras.length, frActiveCameras);
+            } catch (e) {
+                console.error('FR loadFRData error:', e);
+            }
+        }
+
+        function renderFRDatasets(datasets) {
+            const tbody = document.getElementById('frDatasetBody');
+            if (!datasets.length) {
+                tbody.innerHTML = '<tr><td colspan="4" style="color:#475569;text-align:center;padding:32px;">No face datasets yet. Add a person folder or use Collect Data.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = datasets.map(d => `
+                <tr>
+                    <td style="font-weight:600;">${escHtml(d.person_name)}</td>
+                    <td>
+                        <span style="color:${d.image_count >= 50 ? '#34d399' : '#fbbf24'}">
+                            ${d.image_count}
+                        </span>
+                        ${d.image_count < 50 ? '<span style="color:#64748b;font-size:0.75em;"> / 50 needed</span>' : '<span style="color:#34d399;font-size:0.75em;"> ✓</span>'}
+                    </td>
+                    <td style="color:#475569;font-size:0.8em;word-break:break-all;">${escHtml(d.folder)}</td>
+                    <td>
+                        <button class="btn-fr-del" onclick="deleteFRFolder('${escHtml(d.person_name)}')">Delete</button>
+                    </td>
+                </tr>`).join('');
+        }
+
+        function renderFRCamList() {
+            const list = document.getElementById('frCamList');
+            if (!frCameras.length) {
+                list.innerHTML = '<div class="empty-state"><h3>No cameras found</h3><p><a href="/">Add cameras first</a></p></div>';
+                return;
+            }
+            list.innerHTML = frCameras.map(cam => {
+                const cid = cam.camera_id;
+                const isOn = frActiveCameras.includes(cid);
+                const isLive = cam.status === 'active';
+                return `
+                <div class="cam-item ${isOn ? 'selected-fr' : ''}" onclick="toggleCamCheck('fr_chk_${cid}')">
+                    <input type="checkbox" id="fr_chk_${cid}" data-cid="${cid}" class="fr-chk" ${isOn ? 'checked' : ''} onclick="event.stopPropagation()">
+                    <div class="cam-dot ${isLive ? 'on' : 'off'}"></div>
+                    <div class="cam-item-info">
+                        <div class="cam-item-name">${escHtml(cam.name || cid)}</div>
+                        <div class="cam-item-url">${escHtml(cam.rtsp_url)}</div>
+                    </div>
+                    <div class="cam-item-badges">
+                        <span class="mini-badge ${isOn ? 'mb-on' : 'mb-off'}">${isOn ? 'Active' : 'Off'}</span>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function fillFRCollectCamSelect() {
+            const sel = document.getElementById('frCollectCamSelect');
+            const current = sel.value;
+            sel.innerHTML = '<option value="">— Select camera —</option>' +
+                frCameras.map(c => `<option value="${escHtml(c.camera_id)}" data-rtsp="${escHtml(c.rtsp_url)}">${escHtml(c.name || c.camera_id)}</option>`).join('');
+            if (current) sel.value = current;
+        }
+
+        function frFillRTSP() {
+            const sel = document.getElementById('frCollectCamSelect');
+            const opt = sel.options[sel.selectedIndex];
+            if (opt && opt.dataset.rtsp) {
+                document.getElementById('frCollectRTSP').value = opt.dataset.rtsp;
+            }
+        }
+
+        function switchFRTab(idx) {
+            [0, 1, 2].forEach(i => {
+                document.getElementById(`frPanel${i}`).style.display = i === idx ? 'block' : 'none';
+                document.getElementById(`frTab${i}`).classList.toggle('active', i === idx);
+            });
+        }
+
+        function showAddFolderDialog() {
+            document.getElementById('frAddFolderWrap').style.display = 'block';
+            document.getElementById('frNewPersonName').focus();
+        }
+
+        async function addFRFolder() {
+            const name = document.getElementById('frNewPersonName').value.trim();
+            if (!name) { showFRDataStatus('Person name is required.', 'err'); return; }
+            try {
+                const res = await fetch('/api/fr/folder/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ person_name: name }),
+                });
+                const data = await res.json();
+                if (!res.ok) { showFRDataStatus(data.error || 'Failed to add folder.', 'err'); return; }
+                document.getElementById('frNewPersonName').value = '';
+                document.getElementById('frAddFolderWrap').style.display = 'none';
+                showFRDataStatus(`Folder created for "${name}".`, 'ok');
+                loadFRData();
+            } catch (e) {
+                showFRDataStatus('Error: ' + e.message, 'err');
+            }
+        }
+
+        async function deleteFRFolder(personName) {
+            if (!confirm(`Delete all face data for "${personName}"? This cannot be undone.`)) return;
+            try {
+                const res = await fetch('/api/fr/folder/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ person_name: personName }),
+                });
+                const data = await res.json();
+                if (!res.ok) { showFRDataStatus(data.error || 'Delete failed.', 'err'); return; }
+                showFRDataStatus(`Deleted data for "${personName}".`, 'ok');
+                loadFRData();
+            } catch (e) {
+                showFRDataStatus('Error: ' + e.message, 'err');
+            }
+        }
+
+        function showFRDataStatus(msg, type) {
+            const el = document.getElementById('frDataStatus');
+            el.textContent = msg;
+            el.className = 'apply-status ' + type;
+        }
+
+        async function startFRCollect() {
+            const rtsp = document.getElementById('frCollectRTSP').value.trim();
+            const person = document.getElementById('frCollectPerson').value.trim();
+            if (!rtsp) { showFRCollectStatus('Enter an RTSP URL.', 'err'); return; }
+            if (!person) { showFRCollectStatus('Enter a person name.', 'err'); return; }
+            if (!frAvailable.yolo) { showFRCollectStatus('YOLO not available.', 'err'); return; }
+            if (!frAvailable.deepsort) { showFRCollectStatus('DeepSort not available.', 'err'); return; }
+
+            showFRCollectStatus('Starting collection...', 'prog');
+            try {
+                const res = await fetch('/api/fr/collect/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rtsp_url: rtsp, person_name: person }),
+                });
+                const data = await res.json();
+                if (!res.ok) { showFRCollectStatus(data.error || 'Failed to start.', 'err'); return; }
+
+                frCollectSessionId = data.session_id;
+                document.getElementById('frCollectStartBtn').style.display = 'none';
+                document.getElementById('frCollectStopBtn').style.display = 'inline-block';
+                document.getElementById('frCollectProgress').style.display = 'block';
+                document.getElementById('frCollectPersonLabel').textContent = person;
+
+                const previewWrap = document.getElementById('frCollectPreviewWrap');
+                const preview = document.getElementById('frCollectPreview');
+                preview.src = `/video_feed/fr_collect/${frCollectSessionId}`;
+                previewWrap.style.display = 'block';
+
+                showFRCollectStatus('Collection running. Stand in front of the camera.', 'prog');
+                frCollectPollTimer = setInterval(pollFRCollectStatus, 1500);
+            } catch (e) {
+                showFRCollectStatus('Error: ' + e.message, 'err');
+            }
+        }
+
+        async function pollFRCollectStatus() {
+            if (!frCollectSessionId) return;
+            try {
+                const res = await fetch(`/api/fr/collect/status/${frCollectSessionId}`);
+                const data = await res.json();
+                if (data.error) {
+                    showFRCollectStatus('Error: ' + data.error, 'err');
+                    stopFRCollectSilent();
+                    return;
+                }
+                const counts = data.counts || {};
+                const totalImages = Object.values(counts).reduce((a, b) => a + b, 0);
+                const maxImages = Math.max(...Object.values(counts), 0);
+                document.getElementById('frCollectCountLabel').textContent = maxImages;
+                document.getElementById('frCollectBar').style.width = Math.min(100, (maxImages / 50) * 100) + '%';
+
+                const completed = data.completed || [];
+                if (completed.length > 0) {
+                    document.getElementById('frCompletedIds').textContent =
+                        `✓ Completed IDs: ${completed.join(', ')} — CSV updated`;
+                }
+
+                if (data.stopped) {
+                    clearInterval(frCollectPollTimer);
+                    frCollectPollTimer = null;
+                    showFRCollectStatus('Collection stopped.', 'ok');
+                    resetFRCollectUI();
+                    loadFRData();
+                }
+            } catch (e) {
+                console.error('FR poll error:', e);
+            }
+        }
+
+        async function stopFRCollect() {
+            if (!frCollectSessionId) return;
+            try {
+                await fetch('/api/fr/collect/stop', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: frCollectSessionId }),
+                });
+            } catch (e) {}
+            stopFRCollectSilent();
+            showFRCollectStatus('Stopping...', 'prog');
+            setTimeout(() => { loadFRData(); }, 1500);
+        }
+
+        function stopFRCollectSilent() {
+            if (frCollectPollTimer) { clearInterval(frCollectPollTimer); frCollectPollTimer = null; }
+            resetFRCollectUI();
+        }
+
+        function resetFRCollectUI() {
+            frCollectSessionId = null;
+            document.getElementById('frCollectStartBtn').style.display = 'inline-block';
+            document.getElementById('frCollectStopBtn').style.display = 'none';
+            document.getElementById('frCollectProgress').style.display = 'none';
+            document.getElementById('frCollectPreviewWrap').style.display = 'none';
+            const preview = document.getElementById('frCollectPreview');
+            if (preview) preview.src = '';
+        }
+
+        function showFRCollectStatus(msg, type) {
+            const el = document.getElementById('frCollectStatus');
+            el.textContent = msg;
+            el.className = 'apply-status ' + type;
+        }
+
+        function toggleFRSelectAll(checked) {
+            document.querySelectorAll('.fr-chk').forEach(chk => {
+                chk.checked = checked;
+                chk.closest('.cam-item').classList.toggle('selected-fr', checked);
+            });
+        }
+
+        async function applyFR() {
+            if (!frAvailable.insightface) {
+                showApplyStatus('frStatus', 'InsightFace is not available. Install: pip install insightface onnxruntime', 'err');
+                return;
+            }
+            const threshold = parseFloat(document.getElementById('frThreshSlider').value) || 0.30;
+            const checked = new Set();
+            document.querySelectorAll('.fr-chk:checked').forEach(el => checked.add(el.dataset.cid));
+            if (checked.size === 0 && frActiveCameras.length === 0) {
+                showApplyStatus('frStatus', 'Select at least one camera to enable FR.', 'err');
+                return;
+            }
+
+            const btn = document.getElementById('frApplyBtn');
+            btn.disabled = true;
+            showApplyStatus('frStatus', 'Applying FR configuration...', 'prog');
+
+            let ok = 0, fail = 0;
+            const failMsgs = [];
+            for (const cam of frCameras) {
+                const cid = cam.camera_id;
+                const want = checked.has(cid);
+                const has = frActiveCameras.includes(cid);
+                try {
+                    if (want) {
+                        const res = await fetch(`/api/fr/detection/enable/${encodeURIComponent(cid)}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ threshold }),
+                        });
+                        if (!res.ok) {
+                            let msg = `HTTP ${res.status}`;
+                            try {
+                                const data = await res.json();
+                                msg = data.error || msg;
+                            } catch (_) {}
+                            throw new Error(msg);
+                        }
+                        ok++;
+                    } else if (!want && has) {
+                        const res = await fetch(`/api/fr/detection/disable/${encodeURIComponent(cid)}`, { method: 'POST' });
+                        if (!res.ok) {
+                            let msg = `HTTP ${res.status}`;
+                            try {
+                                const data = await res.json();
+                                msg = data.error || msg;
+                            } catch (_) {}
+                            throw new Error(msg);
+                        }
+                        ok++;
+                    }
+                } catch (e) {
+                    fail++;
+                    failMsgs.push(`${cid}: ${e.message}`);
+                }
+            }
+            btn.disabled = false;
+            await loadFRData();
+            if (fail === 0) {
+                showApplyStatus('frStatus', `FR configuration applied. ${ok} camera(s) updated.`, 'ok');
+            } else {
+                const detail = failMsgs.length ? ` First error: ${failMsgs[0]}` : '';
+                showApplyStatus('frStatus', `Completed with ${fail} error(s). ${ok} camera(s) updated.${detail}`, 'err');
+                console.error('FR apply failures:', failMsgs);
+            }
+        }
+
+        function escHtml(s) {
+            const d = document.createElement('div');
+            d.textContent = String(s || '');
+            return d.innerHTML;
+        }
+
+        // Initial page load: must run after FR wrappers (loadData + updateTypeCards) exist
+        loadData();
+    </script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel — Config</title>
+    <link rel="stylesheet" href="/static/brand.css">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #0b1020; color: #e6ecf5; min-height: 100vh; }
+        .page-body { padding: 20px 32px 40px; max-width: 1100px; margin: 0 auto; }
+        .back-btn { color: #8b96ab; text-decoration: none; font-size: 0.88em; display: inline-block; margin-bottom: 16px; }
+        .back-btn:hover { color: #3aa0ff; }
+        .page-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+        .page-hdr h1 { font-size: 1.3em; color: #3aa0ff; letter-spacing: 1px; }
+        .toolbar { display: flex; gap: 12px; flex-wrap: wrap; }
+        .tbtn {
+            padding: 8px 20px; border-radius: 6px; border: 1px solid #1f2a44; background: #121a30;
+            color: #3aa0ff; font-size: 0.82em; font-weight: 600; cursor: pointer;
+        }
+        .tbtn.green { border-color: #2ecc71; color: #2ecc71; }
+        .tbtn.red { border-color: #ff4d4f; color: #ff4d4f; }
+        .info-bar {
+            background: #121a30; border: 1px solid #1f2a44; padding: 12px 16px; border-radius: 8px;
+            margin-bottom: 20px; font-size: 0.85em; color: #8b96ab; line-height: 1.5;
+        }
+        .panel-card { background: #121a30; border: 1px solid #1f2a44; border-radius: 10px; padding: 16px; }
+        .panel-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .panel-hdr h2 { font-size: 1em; color: #e6ecf5; }
+        .cam-tag { font-size: 0.75em; color: #8b96ab; }
+        .live-feed {
+            background: #05070f; border-radius: 8px; height: 360px; position: relative;
+            overflow: hidden; border: 1px solid #1a2238; margin-bottom: 14px;
+        }
+        .live-feed img { width: 100%; height: 100%; object-fit: contain; display: block; }
+        .live-feed .placeholder {
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            color: #8b96ab; font-size: 0.85em; flex-direction: column; gap: 8px;
+        }
+        .upload-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+        .upload-row input[type=file] { font-size: 0.8em; color: #8b96ab; flex: 1; min-width: 200px; }
+        .upload-btn {
+            padding: 8px 16px; background: #3aa0ff; color: #fff; border: none; border-radius: 6px;
+            font-size: 0.8em; font-weight: 600; cursor: pointer;
+        }
+        .status-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.8em; color: #8b96ab; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .dot.on { background: #2ecc71; box-shadow: 0 0 6px #2ecc71; }
+        .dot.off { background: #546e7a; }
+        .toast { position: fixed; bottom: 20px; right: 20px; background: #3aa0ff; color: #fff; padding: 10px 18px; border-radius: 8px; display: none; z-index: 999; }
+    </style>
+</head>
+<body>
+{% include 'partials/topbar.html' %}
+<div class="page-body">
+    <a href="/modules" class="back-btn">← Back to Modules</a>
+    <div class="page-hdr">
+        <h1>Panel — Config</h1>
+        <div class="toolbar">
+            <button class="tbtn green" onclick="startPanel()">▶ Start Monitoring</button>
+            <button class="tbtn red" onclick="stopPanel()">■ Stop</button>
+            <a href="/modules/ups-panel/apply" class="tbtn">Open Dashboard ▶</a>
+        </div>
+    </div>
+    <div class="info-bar">
+        Upload an <strong>.mp4</strong> camera video for <strong>PANEL CAM-01</strong>.
+        Detection reads LED states (UPS ON, MAINS ON, CHARGER, BATT LOW, UPS FAULT),
+        meter values (AC/DC voltage, DC current) via OCR, and logs panel events and alarms.
+    </div>
+    <div class="panel-card" id="panelCard">
+        <div class="panel-hdr">
+            <h2>PANEL - 01</h2>
+            <span class="cam-tag" id="camLabel">📷 PANEL CAM-01</span>
+        </div>
+        <div class="live-feed" id="liveFeed">
+            <div class="placeholder">No stream — upload MP4 video and start monitoring</div>
+        </div>
+        <div class="upload-row">
+            <input type="file" accept=".mp4,.avi,.mov,.mkv" id="videoFile">
+            <button class="upload-btn" onclick="uploadVideo()">Upload Video</button>
+        </div>
+        <div class="status-row">
+            <span id="videoName">No video uploaded</span>
+            <span id="runStatus"><span class="dot off"></span>Stopped</span>
+        </div>
+    </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const PANEL_ID = 'UPS-PANEL-01';
+function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3000);
+}
+async function loadPanel() {
+    const res = await fetch('/api/ups/panels');
+    const data = await res.json();
+    const p = (data.panels || []).find(x => x.panel_id === PANEL_ID) || {};
+    document.getElementById('videoName').textContent = p.video_name || 'No video uploaded';
+    document.getElementById('camLabel').textContent = '📷 ' + (p.cam_label || 'PANEL CAM-01');
+    const feed = document.getElementById('liveFeed');
+    if (p.running) {
+        feed.innerHTML = `<img src="/video_feed/ups/${PANEL_ID}?t=${Date.now()%10000}" alt="UPS feed">`;
+        document.getElementById('runStatus').innerHTML = '<span class="dot on"></span>Running · ' + (p.video_status || 'active');
+    } else {
+        feed.innerHTML = '<div class="placeholder">No stream — upload MP4 video and start monitoring</div>';
+        document.getElementById('runStatus').innerHTML = '<span class="dot off"></span>Stopped';
+    }
+}
+async function uploadVideo() {
+    const inp = document.getElementById('videoFile');
+    if (!inp.files.length) { toast('Select a video file first'); return; }
+    const fd = new FormData();
+    fd.append('video', inp.files[0]);
+    toast('Uploading...');
+    const res = await fetch('/api/ups/panels/' + PANEL_ID + '/upload', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.ok) { toast('Uploaded: ' + data.video_name); loadPanel(); }
+    else toast(data.error || 'Upload failed');
+}
+async function startPanel() {
+    const res = await fetch('/api/ups/start', { method: 'POST' });
+    const data = await res.json();
+    toast(data.message || data.error || 'Started');
+    loadPanel();
+}
+async function stopPanel() {
+    await fetch('/api/ups/stop', { method: 'POST' });
+    toast('Stopped');
+    loadPanel();
+}
+loadPanel();
+setInterval(loadPanel, 8000);
+</script>
+</body>
+</html>

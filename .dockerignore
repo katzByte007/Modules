@@ -1,0 +1,32 @@
+# Git and IDE
+.git
+.gitignore
+.cursor
+.vscode
+*.swp
+*.swo
+__pycache__
+
+# Python
+*.pyc
+*.pyo
+.venv
+venv
+env
+*.egg-info
+.pytest_cache
+.mypy_cache
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Docs and local
+*.md
+.env
+.env.*
+!.env.example
+
+# Optional: exclude large models from context if you mount them at run time instead
+# models/

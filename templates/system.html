@@ -1,0 +1,2246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System &mdash; Sutek Vision AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/brand.css">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #e2e8f0;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            background:
+                radial-gradient(ellipse 900px 480px at 12% -8%, rgba(42, 95, 200, 0.1), transparent 55%),
+                radial-gradient(ellipse 700px 400px at 92% 0%, rgba(200, 165, 90, 0.06), transparent 48%),
+                linear-gradient(180deg, #04060d 0%, #090f1c 48%, #0c1424 100%);
+        }
+
+        /* ─── TOPBAR (uses shared brand.css when linked; keep layout helpers only) ─── */
+        .topbar .nav-right { display: flex; align-items: center; gap: 16px; }
+        .page-body { padding: 32px 40px; max-width: 1100px; margin: 0 auto; }
+
+        .page-title {
+            font-size: 1.5em; font-weight: 700; color: #f1f5f9;
+            margin-bottom: 4px; letter-spacing: 0.2px;
+        }
+        .page-subtitle { font-size: 0.88em; color: #64748b; margin-bottom: 32px; }
+
+        /* ─── SECTION CARD ─── */
+        .section-card {
+            background: linear-gradient(155deg, rgba(10, 16, 32, 0.94) 0%, rgba(16, 24, 44, 0.96) 100%);
+            border: 1px solid rgba(115, 145, 190, 0.14);
+            border-radius: 18px;
+            padding: 28px 32px;
+            margin-bottom: 28px;
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            box-shadow: 0 24px 56px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+        .section-header {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 24px; padding-bottom: 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .section-icon {
+            width: 38px; height: 38px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1em; flex-shrink: 0;
+        }
+        .icon-net { background: rgba(59,130,246,0.15); color: #60a5fa; }
+        .icon-cam { background: rgba(16,185,129,0.12); color: #34d399; }
+        .section-title { font-size: 1.05em; font-weight: 700; color: #f1f5f9; }
+        .section-desc { font-size: 0.8em; color: #64748b; margin-top: 2px; }
+
+        /* ─── FORM ELEMENTS ─── */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .form-grid-2 { grid-template-columns: 1fr 1fr; }
+        .form-grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .form-grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+        .field { display: flex; flex-direction: column; gap: 6px; }
+        .field.full { grid-column: 1 / -1; }
+        .field label {
+            font-size: 0.72em; font-weight: 600; color: #94a3b8;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .field input, .field select {
+            background: rgba(0,0,0,0.35);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #f1f5f9;
+            padding: 11px 14px;
+            border-radius: 10px;
+            font-size: 0.88em;
+            font-family: inherit;
+            transition: all 0.2s;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        .field select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 36px;
+        }
+        .field input::placeholder { color: #475569; }
+        .field input:focus, .field select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+        }
+        .field input.rtsp-preview {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8em;
+            color: #a5f3fc;
+            background: rgba(6,182,212,0.05);
+            border-color: rgba(6,182,212,0.2);
+            letter-spacing: 0.3px;
+        }
+        .field input.rtsp-preview:focus {
+            border-color: #06b6d4;
+            box-shadow: 0 0 0 3px rgba(6,182,212,0.12);
+        }
+
+        /* ─── BRAND PILLS ─── */
+        .brand-selector { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+        .brand-pill {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 20px; border-radius: 12px; cursor: pointer;
+            border: 2px solid rgba(255,255,255,0.07);
+            background: rgba(255,255,255,0.03);
+            transition: all 0.2s ease; user-select: none;
+            font-size: 0.88em; font-weight: 600; color: #94a3b8;
+        }
+        .brand-pill:hover { border-color: rgba(255,255,255,0.18); color: #e2e8f0; }
+        .brand-pill.active.hik { border-color: #e11d48; background: rgba(225,29,72,0.1); color: #fb7185; }
+        .brand-pill.active.hon { border-color: #f59e0b; background: rgba(245,158,11,0.1); color: #fbbf24; }
+        .brand-pill.active.cpp { border-color: #8b5cf6; background: rgba(139,92,246,0.1); color: #a78bfa; }
+        .brand-pill.active.manual { border-color: #3b82f6; background: rgba(59,130,246,0.1); color: #60a5fa; }
+        .brand-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+        }
+        .dot-hik { background: #e11d48; }
+        .dot-hon { background: #f59e0b; }
+        .dot-cpp { background: #8b5cf6; }
+        .dot-manual { background: #3b82f6; }
+
+        /* ─── RTSP HINT ─── */
+        .rtsp-hint-box {
+            background: rgba(6,182,212,0.05);
+            border: 1px solid rgba(6,182,212,0.15);
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            font-size: 0.78em;
+            color: #7dd3fc;
+            line-height: 1.6;
+        }
+        .rtsp-hint-box code {
+            background: rgba(0,0,0,0.3);
+            padding: 2px 6px; border-radius: 4px;
+            color: #a5f3fc; font-size: 0.95em;
+        }
+
+        /* ─── BUTTONS ─── */
+        .btn {
+            padding: 11px 22px; border: none; border-radius: 10px;
+            font-weight: 600; font-size: 0.88em; font-family: inherit;
+            cursor: pointer; transition: all 0.2s ease; letter-spacing: 0.2px;
+            display: inline-flex; align-items: center; gap: 7px;
+        }
+        .btn-primary { background: #3b82f6; color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.3); }
+        .btn-primary:hover { background: #2563eb; box-shadow: 0 4px 16px rgba(59,130,246,0.4); transform: translateY(-1px); }
+        .btn-primary:disabled { background: #1e3a5f; color: #475569; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-secondary {
+            background: rgba(255,255,255,0.05); color: #94a3b8;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.09); color: #e2e8f0; }
+        .btn-success { background: #059669; color: #fff; box-shadow: 0 2px 8px rgba(5,150,105,0.3); }
+        .btn-success:hover { background: #047857; box-shadow: 0 4px 14px rgba(5,150,105,0.4); transform: translateY(-1px); }
+        .btn-success:disabled { background: #064e3b; color: #475569; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .btn-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+
+        /* ─── SCAN TABLE ─── */
+        .scan-status {
+            font-size: 0.82em; color: #64748b; padding: 6px 0;
+        }
+        .scan-status.scanning { color: #60a5fa; }
+        .scan-status.done { color: #34d399; }
+        .scan-status.error-msg { color: #f87171; }
+
+        .scan-spinner {
+            display: inline-block; width: 14px; height: 14px;
+            border: 2px solid rgba(96,165,250,0.3); border-top-color: #60a5fa;
+            border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 6px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .devices-table-wrap {
+            overflow-x: auto; margin-top: 14px;
+            border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);
+        }
+        .devices-table {
+            width: 100%; border-collapse: collapse; font-size: 0.83em;
+        }
+        .devices-table th {
+            background: rgba(255,255,255,0.04);
+            color: #64748b; font-weight: 600; text-transform: uppercase;
+            font-size: 0.72em; letter-spacing: 0.8px;
+            padding: 10px 14px; text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .devices-table td {
+            padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.04);
+            color: #cbd5e1;
+        }
+        .devices-table tr:last-child td { border-bottom: none; }
+        .devices-table tr:hover td { background: rgba(59,130,246,0.05); }
+        .status-online {
+            display: inline-flex; align-items: center; gap: 5px;
+            color: #34d399; font-size: 0.9em; font-weight: 500;
+        }
+        .status-online::before {
+            content: ''; display: inline-block;
+            width: 6px; height: 6px; border-radius: 50%;
+            background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.7);
+        }
+        .btn-use {
+            padding: 5px 14px; border-radius: 7px; border: 1px solid rgba(59,130,246,0.3);
+            background: rgba(59,130,246,0.1); color: #60a5fa;
+            font-size: 0.8em; font-weight: 600; cursor: pointer;
+            font-family: inherit; transition: all 0.15s;
+        }
+        .btn-use:hover { background: rgba(59,130,246,0.2); border-color: #3b82f6; }
+
+        .subnet-row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 18px; flex-wrap: wrap; }
+        .subnet-row .field { flex: 0 0 240px; }
+
+        /* ─── TOAST ─── */
+        .toast {
+            position: fixed; bottom: 32px; right: 32px; z-index: 9999;
+            background: #1e293b; border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; padding: 14px 20px;
+            font-size: 0.88em; color: #e2e8f0;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            display: flex; align-items: center; gap: 10px;
+            transform: translateY(20px); opacity: 0;
+            transition: all 0.3s ease; pointer-events: none; max-width: 360px;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+        .toast.success { border-color: rgba(16,185,129,0.3); }
+        .toast.error { border-color: rgba(239,68,68,0.3); }
+        .toast-icon { font-size: 1.1em; }
+
+        @media (max-width: 900px) {
+            .topbar { padding: 0 20px; }
+            .page-body { padding: 20px; }
+            .form-grid-3, .form-grid-4 { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 600px) {
+            .form-grid-2, .form-grid-3, .form-grid-4 { grid-template-columns: 1fr; }
+            .brand-selector { flex-direction: column; }
+        }
+
+        /* ─── System layout & sub-navigation ─── */
+        .topbar .nav-right { display: flex; align-items: center; gap: 16px; }
+        .user-chip {
+            font-size: 0.82em; color: #94a3b8; font-weight: 500;
+        }
+        .user-chip a {
+            color: #7eb8ff; text-decoration: none; margin-left: 10px;
+        }
+        .user-chip a:hover { text-decoration: underline; }
+        .sys-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 28px;
+            align-items: start;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .sys-sidebar {
+            position: sticky;
+            top: 92px;
+            background: linear-gradient(180deg, rgba(8, 14, 28, 0.96) 0%, rgba(12, 20, 40, 0.94) 100%);
+            border: 1px solid rgba(115, 145, 190, 0.12);
+            border-radius: 16px;
+            padding: 18px 12px;
+            box-shadow: inset 3px 0 0 rgba(201, 165, 84, 0.12), 0 16px 40px rgba(0,0,0,0.25);
+        }
+        .sys-sidebar-title {
+            font-size: 0.72em; font-weight: 700; color: rgba(201, 165, 84, 0.75);
+            text-transform: uppercase; letter-spacing: 1.2px;
+            padding: 8px 12px 14px;
+        }
+        .sys-nav-btn {
+            display: block; width: 100%; text-align: left;
+            padding: 11px 14px; margin-bottom: 4px;
+            border: none; border-radius: 10px;
+            background: transparent; color: #94a3b8;
+            font-family: inherit; font-size: 0.88em; font-weight: 500;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .sys-nav-btn:hover { background: rgba(255,255,255,0.06); color: #e2e8f0; }
+        .sys-nav-btn.active {
+            background: rgba(42, 95, 200, 0.18); color: #93c5fd;
+            box-shadow: inset 0 0 0 1px rgba(100, 160, 255, 0.22);
+        }
+        .sys-main { min-width: 0; }
+        .sys-main-header {
+            display: flex; flex-wrap: wrap; align-items: baseline;
+            justify-content: space-between; gap: 12px;
+            margin-bottom: 20px;
+        }
+        .sys-main-header h1.page-title { margin-bottom: 0; }
+        .sys-panel .page-subtitle { margin-top: 4px; }
+        .um-tabs, .st-tabs {
+            display: flex; gap: 4px; margin-bottom: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .um-tab, .st-tab {
+            padding: 10px 18px; border: none; background: none;
+            font-family: inherit; font-size: 0.88em; font-weight: 600;
+            color: #64748b; cursor: pointer;
+            border-bottom: 3px solid transparent; margin-bottom: -1px;
+        }
+        .um-tab:hover, .st-tab:hover { color: #94a3b8; }
+        .um-tab.active, .st-tab.active {
+            color: #f87171; border-bottom-color: #f87171;
+        }
+        .um-panel { display: none; }
+        .um-panel.active { display: block; }
+        .um-toolbar {
+            display: flex; justify-content: flex-end; gap: 10px;
+            margin-bottom: 12px; flex-wrap: wrap;
+        }
+        .um-toolbar button { padding: 8px 16px; border-radius: 8px; font-family: inherit; font-weight: 600; cursor: pointer; }
+        .btn-add { background: #1e293b; color: #e2e8f0; border: 1px solid rgba(255,255,255,0.12); }
+        .btn-mod { background: #334155; color: #94a3b8; border: 1px solid rgba(255,255,255,0.08); }
+        .btn-del { background: #334155; color: #94a3b8; border: 1px solid rgba(255,255,255,0.08); }
+        .btn-add:hover { background: #334155; color: #fff; }
+        .btn-mod:not(:disabled), .btn-del:not(:disabled) { color: #e2e8f0; border-color: rgba(255,255,255,0.15); }
+        .btn-mod:not(:disabled):hover, .btn-del:not(:disabled):hover { background: #475569; }
+        .btn-mod:disabled, .btn-del:disabled { opacity: 0.45; cursor: not-allowed; }
+        .data-table {
+            width: 100%; border-collapse: collapse; font-size: 0.86em;
+        }
+        .data-table th {
+            background: rgba(255,255,255,0.05);
+            color: #94a3b8; text-align: left; padding: 10px 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+            font-weight: 600;
+        }
+        .data-table td {
+            padding: 10px 12px; border: 1px solid rgba(255,255,255,0.06);
+            color: #cbd5e1;
+        }
+        .data-table tbody tr { cursor: pointer; }
+        .data-table tbody tr:hover td { background: rgba(59,130,246,0.06); }
+        .data-table tbody tr.selected td { background: rgba(59,130,246,0.12); }
+        .data-table .num { text-align: center; width: 48px; }
+        .schedule-toolbar {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+            margin-bottom: 14px;
+        }
+        .schedule-toolbar select {
+            background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1);
+            color: #e2e8f0; padding: 8px 12px; border-radius: 8px; font-family: inherit;
+        }
+        .schedule-legend {
+            display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.78em;
+            margin-top: 12px; color: #94a3b8;
+        }
+        .leg { display: flex; align-items: center; gap: 6px; }
+        .leg i {
+            width: 14px; height: 14px; border-radius: 3px; display: inline-block;
+        }
+        .sch-grid-wrap { overflow-x: auto; margin-top: 8px; }
+        .sch-grid {
+            display: grid;
+            grid-template-columns: 52px repeat(24, minmax(22px, 1fr));
+            gap: 2px; min-width: 640px;
+        }
+        .sch-grid .gh { font-size: 0.65em; color: #64748b; text-align: center; padding: 4px 0; }
+        .sch-grid .gd { font-size: 0.72em; color: #94a3b8; padding: 6px 4px; text-align: right; }
+        .sch-cell {
+            min-height: 28px; border-radius: 3px; cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .sch-t0 { background: #2563eb; }
+        .sch-t1 { background: #16a34a; }
+        .sch-t2 { background: #dc2626; }
+        .sch-t3 { background: #ea580c; }
+        .sch-t4 { background: #38bdf8; }
+        .sch-t5 { background: #9333ea; }
+        .holiday-note { font-size: 0.82em; color: #f87171; font-weight: 600; float: right; }
+        .holiday-table-wrap { max-height: 420px; overflow-y: auto; margin-top: 12px; }
+        .holiday-table input[type="text"] {
+            width: 100%; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08);
+            color: #e2e8f0; padding: 6px 8px; border-radius: 6px; font-family: inherit; font-size: 0.9em;
+        }
+        .holiday-table select {
+            background: rgba(0,0,0,0.35); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.1);
+            padding: 6px 8px; border-radius: 6px; font-family: inherit; font-size: 0.85em;
+        }
+        .local-section {
+            margin-bottom: 22px;
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 12px; overflow: hidden;
+        }
+        .local-section h3 {
+            background: rgba(255,255,255,0.05);
+            padding: 10px 16px; font-size: 0.88em; font-weight: 600;
+            color: #cbd5e1; border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .local-section .inner { padding: 16px 18px; }
+        .local-row {
+            display: grid;
+            grid-template-columns: 220px 1fr; gap: 16px;
+            align-items: center; margin-bottom: 12px;
+        }
+        .local-row label { font-size: 0.82em; color: #94a3b8; }
+        .local-row .radios label { display: inline-flex; align-items: center; gap: 6px; margin-right: 14px; font-weight: 500; color: #cbd5e1; }
+        .local-row input[type="text"], .local-row input[type="password"], .local-row input[type="email"], .local-row input[type="number"] {
+            max-width: 420px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
+            color: #e2e8f0; padding: 8px 12px; border-radius: 8px; font-family: inherit;
+        }
+        .local-row .hint { font-size: 0.75em; color: #64748b; margin-top: 4px; }
+        .btn-test-email {
+            background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.25);
+            padding: 10px 18px; border-radius: 10px; font-weight: 600; font-family: inherit;
+            cursor: pointer; margin-top: 8px;
+        }
+        .btn-test-email:hover { background: rgba(59,130,246,0.22); }
+        .eng-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+        .eng-table th, .eng-table td { padding: 8px 6px; text-align: left; font-size: 0.85em; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .eng-table th { color: #93c5fd; font-weight: 600; }
+        .eng-table input {
+            width: 100%; padding: 8px 10px; border-radius: 6px;
+            background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1); color: #e2e8f0; font-family: inherit;
+        }
+        .btn-eng-add { margin-top: 4px; background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.25); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .btn-eng-del { background: none; border: none; color: #f87171; cursor: pointer; font-size: 0.82em; font-weight: 600; }
+        .btn-save-red {
+            background: #dc2626; color: #fff; border: none;
+            padding: 10px 22px; border-radius: 10px; font-weight: 600;
+            font-family: inherit; cursor: pointer; margin-top: 16px;
+        }
+        .btn-save-red:hover { background: #b91c1c; }
+        .modal-backdrop {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+            z-index: 500; align-items: center; justify-content: center;
+        }
+        .modal-backdrop.show { display: flex; }
+        .modal {
+            background: #1e293b; border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px; padding: 22px; width: 100%; max-width: 400px;
+        }
+        .modal h3 { margin-bottom: 16px; font-size: 1.05em; }
+        .modal .field { margin-bottom: 12px; }
+        .modal .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+
+        /* ─── IP Camera (NVR-style) ─── */
+        .ipcam-card { padding: 20px 24px; }
+        .ipcam-title {
+            font-size: 1.05em; font-weight: 700; color: #f1f5f9;
+            margin-bottom: 14px;
+        }
+        .ipcam-toolbar {
+            display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px;
+            margin-bottom: 14px;
+        }
+        .ipcam-toolbar button {
+            padding: 7px 18px; border-radius: 6px; font-family: inherit;
+            font-size: 0.84em; font-weight: 600; cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.14);
+            background: #1e293b; color: #e2e8f0;
+        }
+        .ipcam-toolbar button:hover:not(:disabled) { background: #334155; }
+        .ipcam-toolbar button:disabled {
+            opacity: 0.45; cursor: not-allowed; color: #64748b;
+        }
+        .ipcam-table-wrap {
+            overflow: auto; max-height: 480px;
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;
+        }
+        .ipcam-table th, .ipcam-table td {
+            white-space: nowrap; font-size: 0.82em;
+        }
+        .ipcam-table .chk { width: 36px; text-align: center; }
+        .ipcam-footer {
+            display: flex; flex-wrap: wrap; align-items: center;
+            justify-content: space-between; gap: 12px;
+            margin-top: 12px; font-size: 0.84em; color: #94a3b8;
+        }
+        .ipcam-pager { display: flex; align-items: center; gap: 6px; }
+        .ipcam-pager button {
+            padding: 4px 10px; border-radius: 4px; font-size: 0.8em;
+            border: 1px solid rgba(255,255,255,0.12); background: #1e293b;
+            color: #cbd5e1; cursor: pointer; font-family: inherit;
+        }
+        .ipcam-pager button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .ipcam-pager span { padding: 0 8px; min-width: 48px; text-align: center; }
+        .modal.ipcam-modal { max-width: 520px; padding: 0; overflow: hidden; }
+        .modal.ipcam-modal-wide { max-width: 960px; width: 96vw; }
+        .modal-hdr {
+            display: flex; align-items: center; justify-content: space-between;
+            background: #0f172a; padding: 12px 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .modal-hdr h3 { margin: 0; font-size: 0.95em; font-weight: 600; color: #f1f5f9; }
+        .modal-close {
+            background: none; border: none; color: #94a3b8;
+            font-size: 1.2em; cursor: pointer; line-height: 1;
+        }
+        .modal-close:hover { color: #fff; }
+        .modal-body { padding: 20px 22px; }
+        .ipcam-form-row {
+            display: grid; grid-template-columns: 160px 1fr;
+            align-items: center; gap: 12px; margin-bottom: 14px;
+        }
+        .ipcam-form-row label { font-size: 0.86em; color: #94a3b8; }
+        .ipcam-form-row input, .ipcam-form-row select {
+            width: 100%; padding: 8px 10px; border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(0,0,0,0.35); color: #e2e8f0; font-family: inherit;
+        }
+        .modal-ftr {
+            display: flex; justify-content: flex-end; gap: 10px;
+            padding: 14px 18px; border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .modal-ftr .btn-ok {
+            background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1;
+            padding: 8px 22px; border-radius: 6px; font-weight: 600; cursor: pointer;
+        }
+        .modal-ftr .btn-cancel {
+            background: #334155; color: #e2e8f0; border: 1px solid rgba(255,255,255,0.1);
+            padding: 8px 18px; border-radius: 6px; cursor: pointer;
+        }
+        .quickadd-table-wrap {
+            max-height: 420px; overflow: auto;
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;
+        }
+        .quickadd-table { font-size: 0.78em; }
+        .quickadd-status {
+            font-size: 0.82em; color: #64748b; margin-bottom: 10px;
+        }
+        .quickadd-status.scanning { color: #60a5fa; }
+
+        @media (max-width: 960px) {
+            .sys-layout { grid-template-columns: 1fr; }
+            .sys-sidebar {
+                position: static; display: flex; flex-wrap: wrap; gap: 6px;
+                padding: 12px;
+            }
+            .sys-sidebar-title { width: 100%; padding-bottom: 4px; }
+            .sys-nav-btn { width: auto; flex: 1 1 40%; }
+            .local-row { grid-template-columns: 1fr; }
+        }
+
+        /* ─── Device panel ─── */
+        .dev-stat-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+        .dev-stat-card {
+            background: rgba(12,23,40,0.9); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px; padding: 8px 14px; display: flex; align-items: center; gap: 8px;
+            min-width: 88px; cursor: pointer; transition: border-color 0.2s;
+        }
+        .dev-stat-card:hover, .dev-stat-card.active-filter { border-color: #3b82f6; }
+        .dev-stat-num { font-size: 1.15rem; font-weight: 800; color: #e2e8f0; }
+        .dev-stat-lbl { font-size: 0.62rem; color: #64748b; font-weight: 700; letter-spacing: 0.5px; }
+        .dev-toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+        .dev-search {
+            background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px; padding: 7px 12px; font-size: 0.82rem; color: #e2e8f0; outline: none; width: 240px;
+        }
+        .dev-search:focus { border-color: #3b82f6; }
+        .dev-filter-sel {
+            background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px; padding: 7px 10px; font-size: 0.82rem; color: #e2e8f0;
+        }
+        .dev-tbl-wrap { overflow-x: auto; }
+        .dev-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; min-width: 860px; }
+        .dev-table th {
+            color: #64748b; font-weight: 600; font-size: 0.68rem; padding: 8px 10px; text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.08); letter-spacing: 0.4px;
+        }
+        .dev-table td { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+        .dev-table tbody tr { cursor: pointer; transition: background 0.15s; }
+        .dev-table tbody tr:hover { background: rgba(59,130,246,0.06); }
+        .dev-cam-id { color: #60a5fa; font-weight: 700; font-size: 0.82rem; }
+        .dev-cam-sub { color: #475569; font-size: 0.68rem; margin-top: 2px; }
+        .dev-cam-ts { color: #334155; font-size: 0.65rem; margin-top: 2px; }
+        .dev-badge { display: inline-block; font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+        .dev-b-critical { background: rgba(127,0,0,0.35); color: #fca5a5; }
+        .dev-b-warning { background: rgba(191,54,12,0.25); color: #fdba74; }
+        .dev-b-online { background: rgba(10,42,21,0.6); color: #34d399; border: 1px solid rgba(26,74,40,0.5); }
+        .dev-b-offline { background: rgba(26,32,48,0.8); color: #94a3b8; border: 1px solid rgba(38,48,64,0.5); }
+        .dev-det-val { font-weight: 600; color: #fbbf24; font-size: 0.78rem; }
+        .dev-det-status { font-size: 0.68rem; margin-top: 2px; }
+        .dev-ok { color: #34d399; } .dev-low { color: #fbbf24; } .dev-stop { color: #f87171; } .dev-na { color: #64748b; }
+        .dev-hooter-on { color: #f87171; font-size: 0.68rem; font-weight: 700; }
+        .dev-hooter-off { color: #475569; font-size: 0.68rem; }
+        .dev-loc-zone { color: #7dd3fc; font-size: 0.72rem; font-weight: 600; }
+        .dev-loc-cell { color: #475569; font-size: 0.65rem; line-height: 1.4; }
+        .dev-back-btn {
+            background: rgba(255,255,255,0.05); color: #60a5fa; border: 1px solid rgba(59,130,246,0.25);
+            border-radius: 6px; padding: 6px 14px; font-size: 0.82rem; cursor: pointer; margin-bottom: 10px;
+        }
+        .dev-back-btn:hover { border-color: #3b82f6; }
+        .dev-breadcrumb { font-size: 0.82rem; color: #64748b; margin-bottom: 10px; }
+        .dev-breadcrumb a { color: #60a5fa; cursor: pointer; text-decoration: none; }
+        .dev-tabs { display: flex; gap: 2px; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 14px; overflow-x: auto; }
+        .dev-tab {
+            font-size: 0.75rem; font-weight: 600; color: #64748b; padding: 9px 14px; cursor: pointer;
+            border-bottom: 2px solid transparent; white-space: nowrap;
+        }
+        .dev-tab.active { color: #60a5fa; border-bottom-color: #3b82f6; }
+        .dev-tab:hover { color: #94a3b8; }
+        .dev-det-page { display: none; } .dev-det-page.active { display: block; }
+        .dev-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        @media (max-width: 800px) { .dev-detail-grid { grid-template-columns: 1fr; } }
+        .dev-info-card {
+            background: rgba(12,23,40,0.85); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px; padding: 14px;
+        }
+        .dev-info-title { font-size: 0.68rem; font-weight: 700; color: #64748b; letter-spacing: 0.6px; margin-bottom: 10px; text-transform: uppercase; }
+        .dev-info-row { display: flex; gap: 8px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.78rem; }
+        .dev-info-row:last-child { border-bottom: none; }
+        .dev-info-key { color: #64748b; min-width: 120px; font-size: 0.72rem; }
+        .dev-info-val { color: #cbd5e1; flex: 1; }
+        .dev-info-val.link { color: #60a5fa; cursor: pointer; text-decoration: underline; }
+        .dev-tele-card {
+            background: rgba(12,23,40,0.85); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px; padding: 12px 14px; margin-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+        }
+        .dev-tele-card.alert-t { border-left: 3px solid #ef4444; }
+        .dev-tele-card.safe-t { border-left: 3px solid #22c55e; }
+        .dev-tele-card.warn-t { border-left: 3px solid #eab308; }
+        .dev-tele-label { font-size: 0.62rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+        .dev-tele-main { font-size: 0.92rem; font-weight: 700; color: #e2e8f0; margin: 3px 0; }
+        .dev-tele-sub { font-size: 0.72rem; }
+        .dev-ctrl-btn {
+            display: block; width: 100%; text-align: left; margin-bottom: 8px;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px; padding: 8px 12px; color: #cbd5e1; font-size: 0.78rem; cursor: pointer;
+        }
+        .dev-ctrl-btn:hover { border-color: #3b82f6; color: #e2e8f0; }
+    </style>
+</head>
+<body>
+<div id="system-page-config" data-is-admin="{% if auth_level == 'admin' %}true{% else %}false{% endif %}" hidden></div>
+
+{% include 'partials/topbar.html' %}
+
+<div class="page-body">
+<div class="sys-layout">
+<aside class="sys-sidebar">
+    <div class="sys-sidebar-title">Configuration</div>
+    <button type="button" class="sys-nav-btn active" data-target="panel-camera">Camera &amp; network</button>
+    <button type="button" class="sys-nav-btn" data-target="panel-device">Device</button>
+    <button type="button" class="sys-nav-btn" data-target="panel-users">User management</button>
+    <button type="button" class="sys-nav-btn" data-target="panel-storage">Storage</button>
+    <button type="button" class="sys-nav-btn" data-target="panel-local">Local</button>
+</aside>
+<div class="sys-main">
+    <div class="sys-main-header">
+        <div>
+            <div class="page-title" id="sysHeadTitle">System</div>
+            <div class="page-subtitle" id="sysHeadSub">IP camera list, manual add, and quick network discovery</div>
+        </div>
+    </div>
+
+    <div id="panel-camera" class="sys-panel">
+    <div class="section-card ipcam-card">
+        <div class="ipcam-title">IP Camera</div>
+        <div class="ipcam-toolbar">
+            <button type="button" id="ipcamBtnAdd">Add</button>
+            <button type="button" id="ipcamBtnMod" disabled>Modify</button>
+            <button type="button" id="ipcamBtnDel" disabled>Delete</button>
+            <button type="button" id="ipcamBtnQuickAdd">Quick Add</button>
+            <button type="button" id="ipcamBtnCustom">Custom Protocol</button>
+            <button type="button" id="ipcamBtnActivation" disabled>Activation</button>
+        </div>
+        <div class="ipcam-table-wrap">
+            <table class="data-table ipcam-table" id="ipCamTable">
+                <thead>
+                    <tr>
+                        <th class="chk"><input type="checkbox" id="ipcamSelectAll" title="Select all"></th>
+                        <th>Channel No.</th>
+                        <th>Camera Name</th>
+                        <th>IP Address</th>
+                        <th>Channel No.</th>
+                        <th>Management Port</th>
+                        <th>Security</th>
+                        <th>Status</th>
+                        <th>Protocol</th>
+                        <th>Join</th>
+                    </tr>
+                </thead>
+                <tbody id="ipCamBody"></tbody>
+            </table>
+        </div>
+        <div class="ipcam-footer">
+            <span id="ipcamTotal">Total 0 Item(s)</span>
+            <div class="ipcam-pager">
+                <button type="button" id="ipcamFirst" disabled>First</button>
+                <button type="button" id="ipcamPrev" disabled>Previous</button>
+                <span id="ipcamPageLabel">0/0</span>
+                <button type="button" id="ipcamNext" disabled>Next</button>
+                <button type="button" id="ipcamLast" disabled>Last</button>
+            </div>
+        </div>
+    </div>
+    </div><!-- /panel-camera -->
+
+    <!-- Hidden fields used by RTSP builder (Add / Modify dialog) -->
+    <div id="ipcamHiddenFields" hidden>
+        <input type="text" id="camIp">
+        <input type="number" id="camPort" value="554">
+        <input type="text" id="camUser">
+        <input type="password" id="camPass">
+        <input type="number" id="hikChannel" value="1">
+        <select id="hikStream"><option value="01">Main</option><option value="02">Sub</option></select>
+        <input type="number" id="honChannel" value="1">
+        <select id="honStream"><option value="01">Main</option><option value="02">Sub</option></select>
+        <input type="number" id="cppChannel" value="1">
+        <select id="cppSubtype"><option value="0">Main</option><option value="1">Sub</option></select>
+        <input type="text" id="rtspUrl">
+        <input type="text" id="camName">
+        <input type="text" id="camId">
+    </div>
+
+    <div id="panel-users" class="sys-panel" style="display:none;">
+        <div class="section-card">
+            <div class="um-tabs">
+                <button type="button" class="um-tab active" data-um="list">User Management</button>
+                <button type="button" class="um-tab" data-um="online">Online Users</button>
+            </div>
+            <div id="um-list" class="um-panel active">
+                <div id="um-admin-only">
+                    <div class="section-header" style="margin-bottom:12px;">
+                        <div class="section-title">User List</div>
+                    </div>
+                    <div class="um-toolbar">
+                        <button type="button" class="btn-add" id="umAdd">Add</button>
+                        <button type="button" class="btn-mod" id="umMod" disabled>Modify</button>
+                        <button type="button" class="btn-del" id="umDel" disabled>Delete</button>
+                    </div>
+                    <table class="data-table" id="umTable">
+                        <thead><tr><th class="num">No.</th><th>User Name</th><th>Level</th></tr></thead>
+                        <tbody id="umBody"></tbody>
+                    </table>
+                </div>
+                <p id="um-user-msg" style="display:none;color:#94a3b8;font-size:0.9em;">Administrator access is required to manage accounts. You can still view online sessions in the other tab.</p>
+            </div>
+            <div id="um-online" class="um-panel">
+                <div class="section-header" style="margin-bottom:12px;">
+                    <div class="section-title">User List</div>
+                </div>
+                <div class="um-toolbar" style="justify-content:flex-end;">
+                    <button type="button" class="btn-add" id="umRefreshOnline">Refresh</button>
+                </div>
+                <table class="data-table">
+                    <thead><tr><th class="num">No.</th><th>User Name</th><th>Level</th><th>IP Address</th><th>User Operation Time</th></tr></thead>
+                    <tbody id="umOnlineBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="panel-storage" class="sys-panel" style="display:none;">
+        <div class="section-card">
+            <div class="st-tabs">
+                <button type="button" class="st-tab active" data-st="sched">Scheduled settings</button>
+                <button type="button" class="st-tab" data-st="adv">Advanced settings</button>
+            </div>
+            <div id="st-sched" class="um-panel active">
+                <div class="section-title" style="color:#f87171;margin-bottom:12px;">Record Schedule</div>
+                <div class="schedule-toolbar">
+                    <label style="display:flex;align-items:center;gap:8px;color:#94a3b8;font-size:0.88em;">
+                        Camera
+                        <select id="schCamera"></select>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;color:#94a3b8;font-size:0.88em;">
+                        <input type="checkbox" id="schEnable" checked> Enable
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;color:#94a3b8;font-size:0.88em;">
+                        Recording type
+                        <select id="schBrush">
+                            <option value="0">Continuous</option>
+                            <option value="1">Motion</option>
+                            <option value="2">Alarm</option>
+                            <option value="3">Motion | Alarm</option>
+                            <option value="4">Motion &amp; Alarm</option>
+                            <option value="5">Event</option>
+                        </select>
+                    </label>
+                    <button type="button" class="btn btn-secondary" id="schClearDay">Clear day</button>
+                    <button type="button" class="btn btn-secondary" id="schClearAll">Delete All</button>
+                </div>
+                <div class="sch-grid-wrap">
+                    <div class="sch-grid" id="schGrid"></div>
+                </div>
+                <div class="schedule-legend">
+                    <span class="leg"><i class="sch-t0"></i> Continuous</span>
+                    <span class="leg"><i class="sch-t1"></i> Motion</span>
+                    <span class="leg"><i class="sch-t2"></i> Alarm</span>
+                    <span class="leg"><i class="sch-t3"></i> Motion | Alarm</span>
+                    <span class="leg"><i class="sch-t4"></i> Motion &amp; Alarm</span>
+                    <span class="leg"><i class="sch-t5"></i> Event</span>
+                </div>
+                <button type="button" class="btn-save-red" id="schSave">Save</button>
+            </div>
+            <div id="st-adv" class="um-panel">
+                <div class="st-tabs" style="margin-top:0;border:none;">
+                    <button type="button" class="st-tab active" data-hol="hol">Holiday</button>
+                    <button type="button" class="st-tab" data-hol="oth">Other</button>
+                </div>
+                <div id="hol-p-hol">
+                    <div class="section-title" style="margin:12px 0;">Holiday Settings <span class="holiday-note">The periods of holiday cannot be overlapped</span></div>
+                    <div class="holiday-table-wrap">
+                        <table class="data-table holiday-table" id="holTable">
+                            <thead><tr><th>Enable</th><th class="num">No.</th><th>Holiday Name</th><th>Type</th><th>Start Date</th><th>End Date</th></tr></thead>
+                            <tbody id="holBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="hol-p-oth" style="display:none;">
+                    <p style="color:#94a3b8;font-size:0.9em;margin-top:12px;">Additional calendar rules (placeholder). Use Holiday for main periods.</p>
+                    <textarea id="holOtherNotes" rows="6" style="width:100%;margin-top:12px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#e2e8f0;border-radius:8px;padding:12px;font-family:inherit;"></textarea>
+                </div>
+                <button type="button" class="btn-save-red" id="holSave">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="panel-device" class="sys-panel" style="display:none;">
+        <div id="devListView">
+            <div class="dev-stat-row" id="devStats"></div>
+            <div class="dev-toolbar">
+                <input class="dev-search" id="devSearch" type="text" placeholder="Search ID, tag, or location...">
+                <select class="dev-filter-sel" id="devZoneFilter"><option value="">All Cameras</option></select>
+                <button type="button" class="btn-secondary" id="devRefreshBtn" style="padding:7px 14px;font-size:0.82rem;">Refresh</button>
+            </div>
+            <div class="dev-tbl-wrap">
+                <table class="dev-table">
+                    <thead>
+                        <tr>
+                            <th>CAMERA</th><th>STATUS</th><th>DETECTION</th><th>STREAM QUALITY</th>
+                            <th>RECORDING</th><th>SIGNAL</th><th>ALERT OUT</th><th>LOCATION</th>
+                        </tr>
+                    </thead>
+                    <tbody id="devTableBody">
+                        <tr><td colspan="8" style="color:#64748b;padding:20px;">Loading devices...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div id="devDetailView" style="display:none;">
+            <button type="button" class="dev-back-btn" id="devBackBtn">← Back to Device</button>
+            <div class="dev-breadcrumb"><a id="devBcLink">Device</a> / <span id="devBcName" style="color:#cbd5e1">—</span></div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                <div class="page-title" id="devDetailTitle" style="font-size:1.1rem;margin:0">—</div>
+                <span class="dev-badge" id="devDetailBadge">—</span>
+            </div>
+            <div class="dev-tabs">
+                <div class="dev-tab active" data-dev-tab="identity">Identity &amp; Status</div>
+                <div class="dev-tab" data-dev-tab="telemetry">Live Telemetry</div>
+                <div class="dev-tab" data-dev-tab="control">Remote Control</div>
+                <div class="dev-tab" data-dev-tab="history">Event History</div>
+                <div class="dev-tab" data-dev-tab="model">AI Model</div>
+            </div>
+            <div class="dev-det-page active" id="devTab-identity">
+                <div class="dev-detail-grid" id="devIdentityGrid"></div>
+            </div>
+            <div class="dev-det-page" id="devTab-telemetry"><div id="devTelemetryGrid"></div></div>
+            <div class="dev-det-page" id="devTab-control"><div class="dev-info-card" style="max-width:420px" id="devControlPanel"></div></div>
+            <div class="dev-det-page" id="devTab-history"><div class="dev-info-card" id="devHistoryPanel"></div></div>
+            <div class="dev-det-page" id="devTab-model"><div class="dev-info-card" style="max-width:480px" id="devModelPanel"></div></div>
+        </div>
+    </div>
+
+    <div id="panel-local" class="sys-panel" style="display:none;">
+        <div class="section-card">
+            <div class="local-section">
+                <h3>Live View Parameters</h3>
+                <div class="inner" id="localLive"></div>
+            </div>
+            <div class="local-section">
+                <h3>Record File Settings</h3>
+                <div class="inner" id="localRec"></div>
+            </div>
+            <div class="local-section">
+                <h3>Picture and Clip Settings</h3>
+                <div class="inner" id="localPic"></div>
+            </div>
+            <div class="local-section">
+                <h3>Email Alerts</h3>
+                <div class="inner" id="localEmail"></div>
+            </div>
+            <div class="local-section">
+                <h3>Response Engineers</h3>
+                <p style="color:#94a3b8;font-size:0.85em;margin:0 0 12px;">Engineers available for alert assignment in the Alerts section.</p>
+                <div class="inner" id="localEngineers"></div>
+            </div>
+            <button type="button" class="btn-save-red" id="localSave">Save</button>
+        </div>
+    </div>
+
+</div><!-- sys-main -->
+</div><!-- sys-layout -->
+</div><!-- page-body -->
+
+<!-- IP Camera — Add / Modify -->
+<div class="modal-backdrop" id="ipCamAddModal">
+    <div class="modal ipcam-modal">
+        <div class="modal-hdr">
+            <h3 id="ipCamAddTitle">IP Camera</h3>
+            <button type="button" class="modal-close" id="ipCamAddClose" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="ipcam-form-row">
+                <label for="ipAddAddress">IP Camera Address</label>
+                <input type="text" id="ipAddAddress" placeholder="172.30.13.48">
+            </div>
+            <div class="ipcam-form-row">
+                <label for="ipAddProtocol">Protocol</label>
+                <select id="ipAddProtocol">
+                    <option value="HIKVISION" selected>HIKVISION</option>
+                    <option value="HONEYWELL">HONEYWELL</option>
+                    <option value="CP PLUS">CP PLUS</option>
+                    <option value="DAHUA">DAHUA</option>
+                    <option value="ONVIF">ONVIF</option>
+                    <option value="GENERIC">GENERIC</option>
+                </select>
+            </div>
+            <div class="ipcam-form-row">
+                <label for="ipAddMgmtPort">Management Port</label>
+                <input type="number" id="ipAddMgmtPort" value="8000" min="1" max="65535">
+            </div>
+            <div class="ipcam-form-row">
+                <label for="ipAddUser">User Name</label>
+                <input type="text" id="ipAddUser" value="admin">
+            </div>
+            <div class="ipcam-form-row">
+                <label for="ipAddPass">Password</label>
+                <input type="password" id="ipAddPass">
+            </div>
+            <div class="ipcam-form-row">
+                <label for="ipAddPassConfirm">Confirm</label>
+                <input type="password" id="ipAddPassConfirm">
+            </div>
+            <div class="ipcam-form-row">
+                <label for="ipAddTransfer">Transfer Protocol</label>
+                <select id="ipAddTransfer">
+                    <option value="Auto" selected>Auto</option>
+                    <option value="TCP">TCP</option>
+                    <option value="UDP">UDP</option>
+                </select>
+            </div>
+            <div class="ipcam-form-row">
+                <label for="ipAddCamName">Camera Name</label>
+                <input type="text" id="ipAddCamName" placeholder="Optional display name">
+            </div>
+        </div>
+        <div class="modal-ftr">
+            <button type="button" class="btn-ok" id="ipCamAddOk">OK</button>
+            <button type="button" class="btn-cancel" id="ipCamAddCancel">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- IP Camera — Quick Add -->
+<div class="modal-backdrop" id="ipCamQuickModal">
+    <div class="modal ipcam-modal ipcam-modal-wide">
+        <div class="modal-hdr">
+            <h3>Quick Add</h3>
+            <button type="button" class="modal-close" id="ipCamQuickClose" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="quickAddStatus" class="quickadd-status">Click OK after selecting devices, or wait for the network scan to finish.</div>
+            <div class="quickadd-table-wrap">
+                <table class="data-table quickadd-table" id="quickAddTable">
+                    <thead>
+                        <tr>
+                            <th class="chk"><input type="checkbox" id="quickAddSelectAll" title="Select all"></th>
+                            <th>IPv4 Address</th>
+                            <th>Number of Channels</th>
+                            <th>Protocol</th>
+                            <th>Management Port</th>
+                            <th>IPv4 Subnet Mask</th>
+                            <th>Mac Address</th>
+                            <th>Serial No.</th>
+                            <th>Firmware Version</th>
+                        </tr>
+                    </thead>
+                    <tbody id="quickAddBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="modal-ftr">
+            <button type="button" class="btn-ok" id="ipCamQuickOk">OK</button>
+            <button type="button" class="btn-cancel" id="ipCamQuickCancel">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- IP Camera — Custom Protocol (placeholder) -->
+<div class="modal-backdrop" id="ipCamCustomModal">
+    <div class="modal ipcam-modal">
+        <div class="modal-hdr">
+            <h3>Custom Protocol</h3>
+            <button type="button" class="modal-close" id="ipCamCustomClose" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="color:#94a3b8;font-size:0.88em;line-height:1.5;">
+                Define a non-standard camera protocol profile. Use <strong>Add</strong> with GENERIC protocol for manual RTSP paths until custom profiles are configured here.
+            </p>
+        </div>
+        <div class="modal-ftr">
+            <button type="button" class="btn-cancel" id="ipCamCustomCancel">Close</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-backdrop" id="umModal">
+    <div class="modal">
+        <h3 id="umModalTitle">Add User</h3>
+        <div class="field"><label>User Name</label><input type="text" id="muName" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.3);color:#fff;"></div>
+        <div class="field"><label>Password</label><input type="password" id="muPass" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.3);color:#fff;"></div>
+        <div class="field"><label>Level</label>
+            <select id="muLevel" style="width:100%;padding:10px;border-radius:8px;background:rgba(0,0,0,0.3);color:#fff;border:1px solid rgba(255,255,255,0.1);">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+            </select>
+        </div>
+        <div class="actions">
+            <button type="button" class="btn btn-secondary" id="umModalCancel">Cancel</button>
+            <button type="button" class="btn btn-primary" id="umModalOk">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast">
+    <span class="toast-icon" id="toastIcon"></span>
+    <span id="toastMsg"></span>
+</div>
+
+<script>
+    /* ──────────────────────────────────────────
+       IP CAMERA — state & protocol mapping
+    ────────────────────────────────────────── */
+    let currentBrand = 'hikvision';
+    let rtspManualOverride = false;
+    let ipCamList = [];
+    let ipCamSelected = new Set();
+    let ipCamPage = 1;
+    const IPCAM_PAGE_SIZE = 12;
+    let ipCamEditId = null;
+    let quickAddDevices = [];
+
+    const PROTOCOL_TO_BRAND = {
+        'HIKVISION': 'hikvision',
+        'HONEYWELL': 'honeywell',
+        'CP PLUS': 'cpplus',
+        'DAHUA': 'hikvision',
+        'ONVIF': 'manual',
+        'GENERIC': 'manual'
+    };
+
+    function protocolToBrand(protocol) {
+        return PROTOCOL_TO_BRAND[(protocol || '').toUpperCase()] || 'hikvision';
+    }
+
+    function selectBrand(brand) {
+        currentBrand = brand;
+        rtspManualOverride = false;
+        document.getElementById('camPort').value = '554';
+        buildRtsp();
+    }
+
+    /* ──────────────────────────────────────────
+       RTSP BUILDER
+    ────────────────────────────────────────── */
+    function encodeCredPart(val) {
+        // URL-encode only special chars that break RTSP URLs: @  /  :  #  ?  space
+        return encodeURIComponent(val).replace(/%40/g, '%40');
+    }
+
+    function buildRtsp() {
+        if (rtspManualOverride) return;
+        const ip   = document.getElementById('camIp').value.trim();
+        const port = document.getElementById('camPort').value.trim() || '554';
+        const user = document.getElementById('camUser').value;
+        const pass = document.getElementById('camPass').value;
+        const eu   = encodeCredPart(user);
+        const ep   = encodeCredPart(pass);
+        let url    = '';
+
+        if (!ip) { document.getElementById('rtspUrl').value = ''; return; }
+
+        const base = (user || pass) ? `rtsp://${eu}:${ep}@${ip}:${port}` : `rtsp://${ip}:${port}`;
+
+        if (currentBrand === 'hikvision') {
+            const ch  = document.getElementById('hikChannel').value || '1';
+            const st  = document.getElementById('hikStream').value  || '01';
+            url = `${base}/Streaming/Channels/${ch}${st}`;
+        } else if (currentBrand === 'honeywell') {
+            const ch  = document.getElementById('honChannel').value || '1';
+            const st  = document.getElementById('honStream').value  || '01';
+            url = `${base}/Streaming/Channels/${ch}${st}`;
+        } else if (currentBrand === 'cpplus') {
+            const ch  = document.getElementById('cppChannel').value  || '1';
+            const sub = document.getElementById('cppSubtype').value  || '0';
+            url = `${base}/cam/realmonitor?channel=${ch}&subtype=${sub}`;
+        } else {
+            url = `${base}/stream`;
+        }
+        document.getElementById('rtspUrl').value = url;
+    }
+
+    function onRtspManualEdit() {
+        rtspManualOverride = true;
+    }
+
+    function parseRtspMeta(rtspUrl) {
+        const out = { ip: '—', port: '554', protocol: 'HIKVISION', mgmtPort: '8000' };
+        if (!rtspUrl) return out;
+        try {
+            const u = new URL(rtspUrl);
+            out.ip = u.hostname || '—';
+            out.port = u.port || '554';
+            const path = (u.pathname || '').toLowerCase();
+            if (path.includes('realmonitor')) out.protocol = 'CP PLUS';
+            else if (path.includes('streaming/channels')) out.protocol = 'HIKVISION';
+            else out.protocol = 'GENERIC';
+        } catch (_) {
+            const m = rtspUrl.match(/@([^:/]+)/);
+            if (m) out.ip = m[1];
+        }
+        return out;
+    }
+
+    function syncAddFormToHidden() {
+        const ip = document.getElementById('ipAddAddress').value.trim();
+        const protocol = document.getElementById('ipAddProtocol').value;
+        const user = document.getElementById('ipAddUser').value;
+        const pass = document.getElementById('ipAddPass').value;
+        selectBrand(protocolToBrand(protocol));
+        document.getElementById('camIp').value = ip;
+        document.getElementById('camPort').value = '554';
+        document.getElementById('camUser').value = user;
+        document.getElementById('camPass').value = pass;
+        document.getElementById('camName').value = document.getElementById('ipAddCamName').value.trim();
+        buildRtsp();
+    }
+
+    function openIpCamAddModal(editRow) {
+        ipCamEditId = editRow ? editRow.camera_id : null;
+        document.getElementById('ipCamAddTitle').textContent = editRow ? 'IP Camera — Modify' : 'IP Camera';
+        document.getElementById('ipAddAddress').value = editRow ? editRow._ip : '';
+        document.getElementById('ipAddProtocol').value = editRow ? editRow._protocol : 'HIKVISION';
+        document.getElementById('ipAddMgmtPort').value = editRow ? editRow._mgmtPort : '8000';
+        document.getElementById('ipAddUser').value = editRow ? (editRow._user || 'admin') : 'admin';
+        document.getElementById('ipAddPass').value = '';
+        document.getElementById('ipAddPassConfirm').value = '';
+        document.getElementById('ipAddTransfer').value = 'Auto';
+        document.getElementById('ipAddCamName').value = editRow ? (editRow.name || '') : '';
+        document.getElementById('ipCamAddModal').classList.add('show');
+    }
+
+    function closeIpCamAddModal() {
+        document.getElementById('ipCamAddModal').classList.remove('show');
+        ipCamEditId = null;
+    }
+
+    async function submitIpCamAdd() {
+        const ip = document.getElementById('ipAddAddress').value.trim();
+        const pass = document.getElementById('ipAddPass').value;
+        const pass2 = document.getElementById('ipAddPassConfirm').value;
+        if (!ip) { showToast('error', 'IP Camera Address is required'); return; }
+        if (pass !== pass2) { showToast('error', 'Password and Confirm do not match'); return; }
+        if (ipCamEditId && !pass) {
+            const row = ipCamList.find(c => c.camera_id === ipCamEditId);
+            if (row && row.rtsp_url) {
+                try {
+                    const u = new URL(row.rtsp_url);
+                    document.getElementById('ipAddPass').value = decodeURIComponent(u.password || '');
+                    document.getElementById('ipAddUser').value = decodeURIComponent(u.username || 'admin');
+                } catch (_) { /* keep form values */ }
+            }
+        }
+        syncAddFormToHidden();
+        const rtspUrl = document.getElementById('rtspUrl').value.trim();
+        if (!rtspUrl || !rtspUrl.toLowerCase().startsWith('rtsp://')) {
+            showToast('error', 'Could not build a valid RTSP URL'); return;
+        }
+        const name = document.getElementById('ipAddCamName').value.trim() || `Camera ${ip}`;
+        const body = { rtsp_url: rtspUrl, name };
+        try {
+            const url = ipCamEditId
+                ? '/api/cameras/' + encodeURIComponent(ipCamEditId)
+                : '/api/cameras';
+            const res = await fetch(url, {
+                method: ipCamEditId ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+            showToast('success', ipCamEditId ? 'Camera updated' : `Camera "${data.camera_id}" added`);
+            closeIpCamAddModal();
+            await loadIpCameraTable();
+        } catch (e) {
+            showToast('error', 'Failed to save camera: ' + e.message);
+        }
+    }
+
+    function updateIpCamToolbar() {
+        const n = ipCamSelected.size;
+        document.getElementById('ipcamBtnMod').disabled = n !== 1;
+        document.getElementById('ipcamBtnDel').disabled = n < 1;
+        document.getElementById('ipcamBtnActivation').disabled = n < 1;
+    }
+
+    function renderIpCamPage() {
+        const total = ipCamList.length;
+        const pages = Math.max(1, Math.ceil(total / IPCAM_PAGE_SIZE));
+        if (ipCamPage > pages) ipCamPage = pages;
+        if (ipCamPage < 1) ipCamPage = 1;
+        const start = (ipCamPage - 1) * IPCAM_PAGE_SIZE;
+        const slice = ipCamList.slice(start, start + IPCAM_PAGE_SIZE);
+        const body = document.getElementById('ipCamBody');
+        body.innerHTML = slice.map((cam, idx) => {
+            const ch = start + idx + 1;
+            const meta = cam._meta;
+            const checked = ipCamSelected.has(cam.camera_id) ? ' checked' : '';
+            return `<tr data-id="${cam.camera_id}">
+                <td class="chk"><input type="checkbox" class="ipcam-row-chk" data-id="${cam.camera_id}"${checked}></td>
+                <td>D${ch}</td>
+                <td>${(cam.name || '').replace(/</g,'&lt;')}</td>
+                <td>${meta.ip}</td>
+                <td>1</td>
+                <td>${meta.mgmtPort}</td>
+                <td>Strong</td>
+                <td><span class="status-online">${cam.status === 'active' ? 'Online' : 'Offline'}</span></td>
+                <td>${meta.protocol}</td>
+                <td></td>
+            </tr>`;
+        }).join('') || '<tr><td colspan="10" style="text-align:center;color:#64748b;padding:24px;">No IP cameras configured. Click Add or Quick Add.</td></tr>';
+        document.getElementById('ipcamTotal').textContent = `Total ${total} Item(s)`;
+        document.getElementById('ipcamPageLabel').textContent = total ? `${ipCamPage}/${pages}` : '0/0';
+        document.getElementById('ipcamFirst').disabled = ipCamPage <= 1;
+        document.getElementById('ipcamPrev').disabled = ipCamPage <= 1;
+        document.getElementById('ipcamNext').disabled = ipCamPage >= pages || total === 0;
+        document.getElementById('ipcamLast').disabled = ipCamPage >= pages || total === 0;
+        document.getElementById('ipcamSelectAll').checked = slice.length > 0 && slice.every(c => ipCamSelected.has(c.camera_id));
+        body.querySelectorAll('.ipcam-row-chk').forEach(cb => {
+            cb.addEventListener('change', () => {
+                const id = cb.getAttribute('data-id');
+                if (cb.checked) ipCamSelected.add(id); else ipCamSelected.delete(id);
+                updateIpCamToolbar();
+            });
+        });
+        updateIpCamToolbar();
+    }
+
+    async function loadIpCameraTable() {
+        try {
+            const r = await fetch('/api/cameras');
+            const list = await r.json();
+            ipCamList = (Array.isArray(list) ? list : []).map(cam => {
+                const meta = parseRtspMeta(cam.rtsp_url);
+                let user = '';
+                try { user = new URL(cam.rtsp_url).username || ''; } catch (_) {}
+                return { ...cam, _meta: meta, _ip: meta.ip, _protocol: meta.protocol, _mgmtPort: meta.mgmtPort, _user: decodeURIComponent(user) };
+            });
+            renderIpCamPage();
+        } catch (e) {
+            showToast('error', 'Failed to load cameras: ' + e.message);
+        }
+    }
+
+    async function deleteSelectedIpCams() {
+        if (ipCamSelected.size === 0) return;
+        if (!confirm(`Delete ${ipCamSelected.size} camera(s)?`)) return;
+        for (const id of [...ipCamSelected]) {
+            await fetch('/api/cameras/' + encodeURIComponent(id), { method: 'DELETE' });
+        }
+        ipCamSelected.clear();
+        showToast('success', 'Selected camera(s) removed');
+        await loadIpCameraTable();
+    }
+
+    function guessCameraScanSubnet() {
+        if (ipCamList.length) {
+            const ip = ipCamList[0]._ip;
+            if (ip && /^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) {
+                return ip.split('.').slice(0, 3).join('.') + '.0/24';
+            }
+        }
+        const addr = (document.getElementById('ipAddAddress')?.value || '').trim();
+        if (addr && /^\d{1,3}(\.\d{1,3}){3}$/.test(addr)) {
+            return addr.split('.').slice(0, 3).join('.') + '.0/24';
+        }
+        return '172.30.121.0/24';
+    }
+
+    async function runQuickAddScan() {
+        const statusEl = document.getElementById('quickAddStatus');
+        const body = document.getElementById('quickAddBody');
+        const scanSubnet = guessCameraScanSubnet();
+        statusEl.className = 'quickadd-status scanning';
+        statusEl.innerHTML = '<span class="scan-spinner"></span> Searching ' + scanSubnet + ' for IP cameras…';
+        body.innerHTML = '';
+        quickAddDevices = [];
+        try {
+            const r = await fetch('/api/scan_network?subnet=' + encodeURIComponent(scanSubnet));
+            const d = await r.json();
+            if (d.status !== 'success') throw new Error(d.message || 'Scan failed');
+            quickAddDevices = d.cameras || [];
+            if (!quickAddDevices.length) {
+                statusEl.className = 'quickadd-status';
+                statusEl.textContent = `No devices found on ${d.subnet || 'the local network'}.`;
+                body.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:#64748b;">No devices discovered</td></tr>';
+                return;
+            }
+            statusEl.className = 'quickadd-status done';
+            statusEl.textContent = `Found ${quickAddDevices.length} device(s) on ${d.subnet || 'the local network'}. Select cameras and click OK.`;
+            body.innerHTML = quickAddDevices.map((dev, i) => `
+                <tr>
+                    <td class="chk"><input type="checkbox" class="qa-row-chk" data-idx="${i}"></td>
+                    <td>${dev.ip}</td>
+                    <td>${dev.channels ?? 1}</td>
+                    <td>${dev.protocol || 'HIKVISION'}</td>
+                    <td>${dev.management_port ?? dev.port ?? 8000}</td>
+                    <td>${dev.subnet_mask || '—'}</td>
+                    <td>${dev.mac_address || '—'}</td>
+                    <td>${(dev.serial_no || dev.model || '—').replace(/</g,'&lt;')}</td>
+                    <td>${dev.firmware_version || '—'}</td>
+                </tr>`).join('');
+        } catch (e) {
+            statusEl.className = 'quickadd-status error-msg';
+            statusEl.textContent = 'Scan error: ' + e.message;
+        }
+    }
+
+    function buildRtspFromDevice(dev, user, pass) {
+        selectBrand(protocolToBrand(dev.protocol || 'HIKVISION'));
+        document.getElementById('camIp').value = dev.ip;
+        document.getElementById('camPort').value = String(dev.port || 554);
+        document.getElementById('camUser').value = user || 'admin';
+        document.getElementById('camPass').value = pass || '';
+        buildRtsp();
+        return document.getElementById('rtspUrl').value.trim();
+    }
+
+    async function submitQuickAdd() {
+        const checked = [...document.querySelectorAll('.qa-row-chk:checked')];
+        if (!checked.length) {
+            showToast('error', 'Select at least one device'); return;
+        }
+        let added = 0;
+        for (const cb of checked) {
+            const dev = quickAddDevices[parseInt(cb.getAttribute('data-idx'), 10)];
+            if (!dev) continue;
+            const rtsp = buildRtspFromDevice(dev, 'admin', '');
+            const name = (dev.serial_no && dev.serial_no !== '—') ? dev.serial_no : `Camera ${dev.ip}`;
+            const res = await fetch('/api/cameras', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rtsp_url: rtsp, name })
+            });
+            const data = await res.json();
+            if (!data.error) added++;
+        }
+        document.getElementById('ipCamQuickModal').classList.remove('show');
+        showToast(added ? 'success' : 'error', added ? `Added ${added} camera(s). Set passwords via Modify if needed.` : 'No cameras were added');
+        await loadIpCameraTable();
+    }
+
+    function initIpCameraUi() {
+        document.getElementById('ipcamBtnAdd').addEventListener('click', () => openIpCamAddModal(null));
+        document.getElementById('ipcamBtnMod').addEventListener('click', () => {
+            const id = [...ipCamSelected][0];
+            const row = ipCamList.find(c => c.camera_id === id);
+            if (row) openIpCamAddModal(row);
+        });
+        document.getElementById('ipcamBtnDel').addEventListener('click', deleteSelectedIpCams);
+        document.getElementById('ipcamBtnQuickAdd').addEventListener('click', () => {
+            document.getElementById('ipCamQuickModal').classList.add('show');
+            runQuickAddScan();
+        });
+        document.getElementById('ipcamBtnCustom').addEventListener('click', () => {
+            document.getElementById('ipCamCustomModal').classList.add('show');
+        });
+        document.getElementById('ipcamBtnActivation').addEventListener('click', () => {
+            showToast('info', 'Activation is managed when cameras are added to the platform.');
+        });
+        document.getElementById('ipCamAddClose').addEventListener('click', closeIpCamAddModal);
+        document.getElementById('ipCamAddCancel').addEventListener('click', closeIpCamAddModal);
+        document.getElementById('ipCamAddOk').addEventListener('click', submitIpCamAdd);
+        document.getElementById('ipCamQuickClose').addEventListener('click', () => document.getElementById('ipCamQuickModal').classList.remove('show'));
+        document.getElementById('ipCamQuickCancel').addEventListener('click', () => document.getElementById('ipCamQuickModal').classList.remove('show'));
+        document.getElementById('ipCamQuickOk').addEventListener('click', submitQuickAdd);
+        document.getElementById('ipCamCustomClose').addEventListener('click', () => document.getElementById('ipCamCustomModal').classList.remove('show'));
+        document.getElementById('ipCamCustomCancel').addEventListener('click', () => document.getElementById('ipCamCustomModal').classList.remove('show'));
+        document.getElementById('ipcamSelectAll').addEventListener('change', (e) => {
+            const start = (ipCamPage - 1) * IPCAM_PAGE_SIZE;
+            ipCamList.slice(start, start + IPCAM_PAGE_SIZE).forEach(c => {
+                if (e.target.checked) ipCamSelected.add(c.camera_id); else ipCamSelected.delete(c.camera_id);
+            });
+            renderIpCamPage();
+        });
+        document.getElementById('quickAddSelectAll').addEventListener('change', (e) => {
+            document.querySelectorAll('.qa-row-chk').forEach(cb => { cb.checked = e.target.checked; });
+        });
+        document.getElementById('ipcamFirst').addEventListener('click', () => { ipCamPage = 1; renderIpCamPage(); });
+        document.getElementById('ipcamPrev').addEventListener('click', () => { ipCamPage--; renderIpCamPage(); });
+        document.getElementById('ipcamNext').addEventListener('click', () => { ipCamPage++; renderIpCamPage(); });
+        document.getElementById('ipcamLast').addEventListener('click', () => {
+            ipCamPage = Math.max(1, Math.ceil(ipCamList.length / IPCAM_PAGE_SIZE));
+            renderIpCamPage();
+        });
+        loadIpCameraTable();
+    }
+
+    /* ──────────────────────────────────────────
+       TOAST
+    ────────────────────────────────────────── */
+    let toastTimer = null;
+    function showToast(type, msg) {
+        const t  = document.getElementById('toast');
+        const ic = document.getElementById('toastIcon');
+        const m  = document.getElementById('toastMsg');
+        ic.textContent = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+        m.textContent  = msg;
+        t.className    = `toast show ${type}`;
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => { t.classList.remove('show'); }, 4000);
+    }
+
+    /* ─── System shell: nav, auth, users, storage, local ─── */
+    const IS_ADMIN = document.getElementById('system-page-config').dataset.isAdmin === 'true';
+
+    const SYS_HEAD = {
+        'panel-camera': ['System', 'IP camera list, manual add, and quick network discovery'],
+        'panel-device': ['Device', 'Manage and monitor all camera stream endpoints'],
+        'panel-users': ['User management', 'Accounts and active sessions'],
+        'panel-storage': ['Storage', 'Recording schedule and holiday / advanced rules'],
+        'panel-local': ['Local', 'Client viewing, file paths, and email alerts']
+    };
+
+    document.querySelectorAll('.sys-nav-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-target');
+            document.querySelectorAll('.sys-nav-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.querySelectorAll('.sys-panel').forEach(p => { p.style.display = 'none'; });
+            const panel = document.getElementById(id);
+            if (panel) panel.style.display = '';
+            const h = SYS_HEAD[id];
+            if (h) {
+                document.getElementById('sysHeadTitle').textContent = h[0];
+                document.getElementById('sysHeadSub').textContent = h[1];
+            }
+            if (id === 'panel-camera') loadIpCameraTable();
+            if (id === 'panel-device') loadDevices();
+            if (id === 'panel-users') refreshOnlineUsers();
+            if (id === 'panel-storage') { loadSchedules(); loadHolidays(); }
+            if (id === 'panel-local') loadLocalSettings();
+        });
+    });
+
+    initIpCameraUi();
+
+    /* User management tabs */
+    document.querySelectorAll('.um-tab').forEach(t => {
+        t.addEventListener('click', () => {
+            const k = t.getAttribute('data-um');
+            document.querySelectorAll('.um-tab').forEach(x => x.classList.remove('active'));
+            t.classList.add('active');
+            document.querySelectorAll('#um-list, #um-online').forEach(p => p.classList.remove('active'));
+            if (k === 'list') document.getElementById('um-list').classList.add('active');
+            else {
+                document.getElementById('um-online').classList.add('active');
+                refreshOnlineUsers();
+            }
+        });
+    });
+
+    const umBody = document.getElementById('umBody');
+    let umSelectedId = null;
+
+    function renderUserAdminUi() {
+        const block = document.getElementById('um-admin-only');
+        const msg = document.getElementById('um-user-msg');
+        if (IS_ADMIN) {
+            block.style.display = '';
+            msg.style.display = 'none';
+            loadUsers();
+        } else {
+            block.style.display = 'none';
+            msg.style.display = '';
+        }
+    }
+    renderUserAdminUi();
+
+    async function loadUsers() {
+        if (!IS_ADMIN) return;
+        const r = await fetch('/api/system/users');
+        if (!r.ok) return;
+        const d = await r.json();
+        umBody.innerHTML = (d.users || []).map((u, i) => `
+            <tr data-id="${u.id}">
+                <td class="num">${i + 1}</td>
+                <td>${escapeHtml(u.username)}</td>
+                <td>${u.level === 'admin' ? 'Admin' : 'User'}</td>
+            </tr>`).join('');
+        umBody.querySelectorAll('tr').forEach(tr => {
+            tr.addEventListener('click', () => {
+                umBody.querySelectorAll('tr').forEach(x => x.classList.remove('selected'));
+                tr.classList.add('selected');
+                umSelectedId = parseInt(tr.getAttribute('data-id'), 10);
+                document.getElementById('umMod').disabled = false;
+                document.getElementById('umDel').disabled = false;
+            });
+        });
+    }
+
+    function escapeHtml(s) {
+        const d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    }
+
+    document.getElementById('umRefreshOnline').addEventListener('click', refreshOnlineUsers);
+
+    async function refreshOnlineUsers() {
+        const r = await fetch('/api/system/online-users');
+        if (!r.ok) return;
+        const d = await r.json();
+        const ob = document.getElementById('umOnlineBody');
+        ob.innerHTML = (d.sessions || []).map(s => `
+            <tr>
+                <td class="num">${s.no}</td>
+                <td>${escapeHtml(s.username)}</td>
+                <td>${escapeHtml(s.level)}</td>
+                <td>${escapeHtml(s.ip)}</td>
+                <td>${escapeHtml(s.last_activity || '')}</td>
+            </tr>`).join('');
+    }
+
+    const umModal = document.getElementById('umModal');
+    let umModalMode = 'add';
+
+    document.getElementById('umAdd').addEventListener('click', () => {
+        if (!IS_ADMIN) return;
+        umModalMode = 'add';
+        document.getElementById('umModalTitle').textContent = 'Add User';
+        document.getElementById('muName').value = '';
+        document.getElementById('muPass').value = '';
+        document.getElementById('muLevel').value = 'user';
+        document.getElementById('muName').disabled = false;
+        umModal.classList.add('show');
+    });
+
+    document.getElementById('umMod').addEventListener('click', async () => {
+        if (!IS_ADMIN || !umSelectedId) return;
+        umModalMode = 'modify';
+        document.getElementById('umModalTitle').textContent = 'Modify User';
+        const row = umBody.querySelector(`tr[data-id="${umSelectedId}"]`);
+        document.getElementById('muName').value = row ? row.children[1].textContent : '';
+        document.getElementById('muName').disabled = true;
+        document.getElementById('muPass').value = '';
+        document.getElementById('muLevel').value = row && row.children[2].textContent === 'Admin' ? 'admin' : 'user';
+        umModal.classList.add('show');
+    });
+
+    document.getElementById('umModalCancel').addEventListener('click', () => umModal.classList.remove('show'));
+
+    document.getElementById('umModalOk').addEventListener('click', async () => {
+        if (!IS_ADMIN) return;
+        const pass = document.getElementById('muPass').value;
+        const level = document.getElementById('muLevel').value;
+        try {
+            if (umModalMode === 'add') {
+                const name = document.getElementById('muName').value.trim();
+                const res = await fetch('/api/system/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: name, password: pass, level })
+                });
+                const j = await res.json();
+                if (!res.ok) throw new Error(j.error || 'Failed');
+                showToast('success', 'User added');
+            } else {
+                const body = { level };
+                if (pass) body.password = pass;
+                const res = await fetch('/api/system/users/' + umSelectedId, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const j = await res.json();
+                if (!res.ok) throw new Error(j.error || 'Failed');
+                showToast('success', 'User updated');
+            }
+            umModal.classList.remove('show');
+            umSelectedId = null;
+            document.getElementById('umMod').disabled = true;
+            document.getElementById('umDel').disabled = true;
+            loadUsers();
+        } catch (e) {
+            showToast('error', e.message);
+        }
+    });
+
+    document.getElementById('umDel').addEventListener('click', async () => {
+        if (!IS_ADMIN || !umSelectedId) return;
+        if (!confirm('Delete this user?')) return;
+        try {
+            const res = await fetch('/api/system/users/' + umSelectedId, { method: 'DELETE' });
+            const j = await res.json();
+            if (!res.ok) throw new Error(j.error || 'Failed');
+            showToast('success', 'User deleted');
+            umSelectedId = null;
+            document.getElementById('umMod').disabled = true;
+            document.getElementById('umDel').disabled = true;
+            loadUsers();
+        } catch (e) {
+            showToast('error', e.message);
+        }
+    });
+
+    /* Storage tabs */
+    document.querySelectorAll('.st-tab[data-st]').forEach(t => {
+        t.addEventListener('click', () => {
+            const k = t.getAttribute('data-st');
+            document.querySelectorAll('.st-tab[data-st]').forEach(x => x.classList.remove('active'));
+            t.classList.add('active');
+            document.getElementById('st-sched').classList.toggle('active', k === 'sched');
+            document.getElementById('st-adv').classList.toggle('active', k === 'adv');
+        });
+    });
+
+    document.querySelectorAll('.st-tab[data-hol]').forEach(t => {
+        t.addEventListener('click', () => {
+            const k = t.getAttribute('data-hol');
+            document.querySelectorAll('.st-tab[data-hol]').forEach(x => x.classList.remove('active'));
+            t.classList.add('active');
+            document.getElementById('hol-p-hol').style.display = k === 'hol' ? '' : 'none';
+            document.getElementById('hol-p-oth').style.display = k === 'oth' ? '' : 'none';
+        });
+    });
+
+    /* Record schedule */
+    let schState = { schedules: {} };
+    let schCam = '';
+    const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    function emptyGrid() {
+        return DAYS.map(() => Array(24).fill(0));
+    }
+
+    function buildSchGrid() {
+        const g = document.getElementById('schGrid');
+        g.innerHTML = '';
+        const corner = document.createElement('div');
+        g.appendChild(corner);
+        for (let h = 0; h < 24; h++) {
+            const el = document.createElement('div');
+            el.className = 'gh';
+            el.textContent = h % 2 === 0 ? String(h) : '';
+            g.appendChild(el);
+        }
+        for (let d = 0; d < 7; d++) {
+            const lab = document.createElement('div');
+            lab.className = 'gd';
+            lab.textContent = DAYS[d];
+            g.appendChild(lab);
+            for (let h = 0; h < 24; h++) {
+                const cell = document.createElement('div');
+                cell.className = 'sch-cell sch-t0';
+                cell.dataset.d = d;
+                cell.dataset.h = h;
+                cell.addEventListener('click', schPaintCell);
+                g.appendChild(cell);
+            }
+        }
+    }
+
+    function schPaintCell(ev) {
+        const cell = ev.target;
+        const d = parseInt(cell.dataset.d, 10);
+        const h = parseInt(cell.dataset.h, 10);
+        const t = parseInt(document.getElementById('schBrush').value, 10);
+        if (!schCam || !schState.schedules[schCam]) return;
+        schState.schedules[schCam].grid[d][h] = t;
+        cell.className = 'sch-cell sch-t' + t;
+    }
+
+    function schRefreshCells() {
+        const g = document.getElementById('schGrid');
+        const cells = g.querySelectorAll('.sch-cell');
+        const grid = schCam && schState.schedules[schCam] ? schState.schedules[schCam].grid : null;
+        cells.forEach(cell => {
+            const d = parseInt(cell.dataset.d, 10);
+            const h = parseInt(cell.dataset.h, 10);
+            const t = grid ? grid[d][h] : 0;
+            cell.className = 'sch-cell sch-t' + t;
+        });
+    }
+
+    async function loadSchedules() {
+        const r = await fetch('/api/system/record-schedules');
+        const d = await r.json();
+        schState.schedules = d.schedules || {};
+        const sel = document.getElementById('schCamera');
+        const prev = schCam;
+        const res = await fetch('/api/cameras');
+        const cams = await res.json();
+        const list = Array.isArray(cams) ? cams : [];
+        sel.innerHTML = list.length
+            ? list.map(c => `<option value="${escapeHtml(c.camera_id)}">[${escapeHtml(c.camera_id)}] ${escapeHtml(c.name || c.camera_id)}</option>`).join('')
+            : '<option value="">(add a camera first)</option>';
+        schCam = list.length ? (prev && schState.schedules[prev] ? prev : list[0].camera_id) : '';
+        if (schCam) sel.value = schCam;
+        if (schCam && !schState.schedules[schCam]) {
+            schState.schedules[schCam] = { enabled: true, grid: emptyGrid() };
+        }
+        buildSchGrid();
+        document.getElementById('schEnable').checked = schCam && schState.schedules[schCam] ? !!schState.schedules[schCam].enabled : true;
+        schRefreshCells();
+    }
+
+    document.getElementById('schCamera').addEventListener('change', () => {
+        schCam = document.getElementById('schCamera').value;
+        if (schCam && !schState.schedules[schCam]) {
+            schState.schedules[schCam] = { enabled: true, grid: emptyGrid() };
+        }
+        document.getElementById('schEnable').checked = schCam && schState.schedules[schCam] ? !!schState.schedules[schCam].enabled : true;
+        schRefreshCells();
+    });
+
+    document.getElementById('schEnable').addEventListener('change', () => {
+        if (schCam && schState.schedules[schCam]) {
+            schState.schedules[schCam].enabled = document.getElementById('schEnable').checked;
+        }
+    });
+
+    document.getElementById('schClearDay').addEventListener('click', () => {
+        if (!schCam || !schState.schedules[schCam]) return;
+        if (!confirm('Clear schedule for all days (reset to Continuous)?')) return;
+        schState.schedules[schCam].grid = emptyGrid();
+        schRefreshCells();
+    });
+
+    document.getElementById('schClearAll').addEventListener('click', () => {
+        if (!confirm('Reset entire schedule for this camera to Continuous 24/7?')) return;
+        if (schCam && schState.schedules[schCam]) {
+            schState.schedules[schCam].grid = emptyGrid();
+            schRefreshCells();
+        }
+    });
+
+    document.getElementById('schSave').addEventListener('click', async () => {
+        try {
+            const res = await fetch('/api/system/record-schedules', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ schedules: schState.schedules })
+            });
+            const j = await res.json();
+            if (!res.ok) throw new Error(j.error || 'Save failed');
+            showToast('success', 'Record schedule saved');
+        } catch (e) {
+            showToast('error', e.message);
+        }
+    });
+
+    /* Holidays */
+    const HOL_ROWS = 16;
+
+    async function loadHolidays() {
+        const r = await fetch('/api/system/holidays');
+        const d = await r.json();
+        let rows = Array.isArray(d.holiday) && d.holiday.length
+            ? d.holiday.slice()
+            : Array.from({ length: HOL_ROWS }, (_, i) => ({
+                enabled: false, name: 'Holiday' + (i + 1), type: 'By Month', start: '1.Jan', end: '1.Jan'
+            }));
+        while (rows.length < HOL_ROWS) {
+            rows.push({ enabled: false, name: '', type: 'By Month', start: '1.Jan', end: '1.Jan' });
+        }
+        rows = rows.slice(0, HOL_ROWS);
+        document.getElementById('holBody').innerHTML = rows.map((row, i) => `
+            <tr>
+                <td class="num"><input type="checkbox" class="hol-en" ${row.enabled ? 'checked' : ''}></td>
+                <td class="num">${i + 1}</td>
+                <td><input type="text" class="hol-name" value="${escapeHtml(row.name || '')}"></td>
+                <td><select class="hol-type">${['By Month', 'By Week'].map(t =>
+                    `<option ${(row.type === t) ? 'selected' : ''}>${t}</option>`).join('')}</select></td>
+                <td><input type="text" class="hol-start" value="${escapeHtml(row.start || '')}"></td>
+                <td><input type="text" class="hol-end" value="${escapeHtml(row.end || '')}"></td>
+            </tr>`).join('');
+        document.getElementById('holOtherNotes').value =
+            (d.other && d.other[0] && d.other[0].notes) ? d.other[0].notes : '';
+    }
+
+    document.getElementById('holSave').addEventListener('click', async () => {
+        const holiday = [];
+        document.querySelectorAll('#holBody tr').forEach((tr, idx) => {
+            holiday.push({
+                enabled: tr.querySelector('.hol-en').checked,
+                name: tr.querySelector('.hol-name').value.trim() || ('Holiday' + (idx + 1)),
+                type: tr.querySelector('.hol-type').value,
+                start: tr.querySelector('.hol-start').value.trim() || '1.Jan',
+                end: tr.querySelector('.hol-end').value.trim() || '1.Jan'
+            });
+        });
+        const other = [{ notes: document.getElementById('holOtherNotes').value }];
+        try {
+            const res = await fetch('/api/system/holidays', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ holiday, other })
+            });
+            const j = await res.json();
+            if (!res.ok) throw new Error(j.error || 'Save failed');
+            showToast('success', 'Holiday settings saved');
+        } catch (e) {
+            showToast('error', e.message);
+        }
+    });
+
+    /* Device management */
+    let devData = { devices: [], stats: {}, zones: [] };
+    let devFilterStatus = '';
+    let devCurrentId = null;
+
+    function devBadgeClass(status) {
+        const s = (status || '').toUpperCase();
+        if (s === 'CRITICAL') return 'dev-b-critical';
+        if (s === 'WARNING') return 'dev-b-warning';
+        if (s === 'OFFLINE') return 'dev-b-offline';
+        return 'dev-b-online';
+    }
+
+    function devEsc(s) {
+        const d = document.createElement('div');
+        d.textContent = s == null ? '' : String(s);
+        return d.innerHTML;
+    }
+
+    async function loadDevices() {
+        try {
+            const r = await fetch('/api/system/devices');
+            devData = await r.json();
+            renderDevStats();
+            renderDevZoneFilter();
+            renderDevTable();
+        } catch (e) {
+            document.getElementById('devTableBody').innerHTML =
+                `<tr><td colspan="8" style="color:#f87171;padding:20px;">Failed to load: ${devEsc(e.message)}</td></tr>`;
+        }
+    }
+
+    function renderDevStats() {
+        const s = devData.stats || {};
+        const items = [
+            { k: '', lbl: 'TOTAL', n: s.total || 0, icon: '📷' },
+            { k: 'ONLINE', lbl: 'ONLINE', n: s.online || 0, icon: '🟢' },
+            { k: 'OFFLINE', lbl: 'OFFLINE', n: s.offline || 0, icon: '⬛' },
+            { k: 'WARNING', lbl: 'WARNINGS', n: s.warning || 0, icon: '⚠️' },
+            { k: 'CRITICAL', lbl: 'CRITICAL', n: s.critical || 0, icon: '🔴' },
+            { k: 'UNACKED', lbl: 'UNACKED', n: s.unacked || 0, icon: '🔕' },
+        ];
+        document.getElementById('devStats').innerHTML = items.map(it => `
+            <div class="dev-stat-card${devFilterStatus === it.k ? ' active-filter' : ''}" data-dev-filter="${it.k}">
+                <span>${it.icon}</span>
+                <div><div class="dev-stat-num">${it.n}</div><div class="dev-stat-lbl">${it.lbl}</div></div>
+            </div>`).join('');
+        document.querySelectorAll('.dev-stat-card').forEach(card => {
+            card.addEventListener('click', () => {
+                devFilterStatus = card.dataset.devFilter || '';
+                renderDevStats();
+                renderDevTable();
+            });
+        });
+    }
+
+    function renderDevZoneFilter() {
+        const sel = document.getElementById('devZoneFilter');
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">All Cameras</option>' +
+            (devData.zones || []).map(z => `<option value="${devEsc(z)}">${devEsc(z)}</option>`).join('');
+        sel.value = cur;
+    }
+
+    function renderDevTable() {
+        const q = (document.getElementById('devSearch').value || '').toLowerCase();
+        const zone = document.getElementById('devZoneFilter').value;
+        let rows = devData.devices || [];
+        if (devFilterStatus === 'UNACKED') {
+            rows = rows.filter(d => (d.open_alerts || 0) > 0);
+        } else if (devFilterStatus) {
+            rows = rows.filter(d => d.status === devFilterStatus);
+        }
+        if (zone) rows = rows.filter(d => d.zone === zone);
+        if (q) {
+            rows = rows.filter(d =>
+                (d.camera_id + d.name + d.zone + (d.location && d.location.label || '')).toLowerCase().includes(q));
+        }
+        const tbody = document.getElementById('devTableBody');
+        if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="8" style="color:#64748b;padding:20px;">No devices match filters.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = rows.map(d => {
+            const det = d.detection || {};
+            const sq = d.stream_quality || {};
+            const rec = d.recording || {};
+            const sig = d.signal || {};
+            const sevCls = det.severity_class === 'stop' ? 'dev-stop' : det.severity_class === 'low' ? 'dev-low' : det.severity_class === 'na' ? 'dev-na' : 'dev-ok';
+            return `<tr data-dev-id="${devEsc(d.camera_id)}">
+                <td><div class="dev-cam-id">${devEsc(d.camera_id)}</div><div class="dev-cam-sub">${devEsc(d.name)}</div><div class="dev-cam-ts">${devEsc(d.uptime_label)}</div></td>
+                <td><span class="dev-badge ${devBadgeClass(d.status)}">${devEsc(d.status)}</span></td>
+                <td><div class="dev-det-val">${devEsc(det.value)}</div><div class="dev-det-status ${sevCls}">${devEsc(det.detail)}</div></td>
+                <td><span class="${sq.class === 'ok' ? 'dev-ok' : sq.class === 'low' ? 'dev-low' : 'dev-stop'}">● ${devEsc(sq.label)}</span></td>
+                <td><span class="${rec.class === 'ok' ? 'dev-ok' : 'dev-stop'}">${rec.label === 'REC' ? '● REC' : '■ STOP'}</span></td>
+                <td style="color:#7dd3fc;font-size:0.75rem">${devEsc(sig.label)}</td>
+                <td><span class="${d.alert_output === 'ON' ? 'dev-hooter-on' : 'dev-hooter-off'}">${d.alert_output === 'ON' ? '🔔 ON' : '🔕 OFF'}</span></td>
+                <td><div class="dev-loc-zone">${devEsc(d.zone)}</div><div class="dev-loc-cell">${devEsc(d.location && d.location.label)}</div></td>
+            </tr>`;
+        }).join('');
+        tbody.querySelectorAll('tr[data-dev-id]').forEach(tr => {
+            tr.addEventListener('click', () => openDeviceDetail(tr.dataset.devId));
+        });
+    }
+
+    async function openDeviceDetail(cameraId) {
+        devCurrentId = cameraId;
+        document.getElementById('devListView').style.display = 'none';
+        document.getElementById('devDetailView').style.display = '';
+        try {
+            const r = await fetch('/api/system/devices/' + encodeURIComponent(cameraId));
+            const d = await r.json();
+            if (!r.ok) throw new Error(d.error || 'Load failed');
+            renderDeviceDetail(d);
+        } catch (e) {
+            showToast('error', e.message);
+        }
+    }
+
+    function renderDeviceDetail(d) {
+        document.getElementById('devBcName').textContent = d.camera_id;
+        document.getElementById('devDetailTitle').textContent = d.camera_id;
+        const badge = document.getElementById('devDetailBadge');
+        badge.textContent = d.status;
+        badge.className = 'dev-badge ' + devBadgeClass(d.status);
+        const det = d.detection || {};
+        const sq = d.stream_quality || {};
+        const rec = d.recording || {};
+        const sig = d.signal || {};
+        document.getElementById('devIdentityGrid').innerHTML = `
+            <div class="dev-info-card">
+                <div class="dev-info-title">Camera Identity</div>
+                <div class="dev-info-row"><span class="dev-info-key">Hardware ID</span><span class="dev-info-val">${devEsc(d.name)}</span></div>
+                <div class="dev-info-row"><span class="dev-info-key">Camera ID</span><span class="dev-info-val">${devEsc(d.camera_id)}</span></div>
+                <div class="dev-info-row"><span class="dev-info-key">Active Since</span><span class="dev-info-val">${devEsc(d.uptime_label)}</span></div>
+                <div class="dev-info-row"><span class="dev-info-key">Tag Name</span><span class="dev-info-val">${devEsc(d.tag)}</span></div>
+                <div class="dev-info-row"><span class="dev-info-key">Zone</span><span class="dev-info-val">${devEsc(d.zone)}</span></div>
+                <div class="dev-info-row"><span class="dev-info-key">RTSP Host</span><span class="dev-info-val">${devEsc(d.rtsp_host || '—')}</span></div>
+                <div class="dev-info-row"><span class="dev-info-key">Location</span><span class="dev-info-val link" onclick="window.open('/plant-map','_blank')">${devEsc(d.location && d.location.label)} — View on Plant Map</span></div>
+            </div>
+            <div class="dev-info-card">
+                <div class="dev-info-title">Current Status Summary</div>
+                <div class="dev-info-row"><span class="dev-info-key">Alert Status</span><span class="dev-info-val">${devEsc(d.status)}</span></div>
+                <div class="dev-info-row"><span class="dev-info-key">Feed Status</span><span class="dev-info-val">${devEsc(sq.feed)}</span></div>
+                <div class="dev-info-row"><span class="dev-info-key">Recording</span><span class="dev-info-val">${devEsc(rec.text)}</span></div>
+                <div class="dev-info-row"><span class="dev-info-key">Signal Strength</span><span class="dev-info-val">${devEsc(sig.label)}</span></div>
+                <div class="dev-info-row"><span class="dev-info-key">Alert Output</span><span class="dev-info-val">${d.alert_output === 'ON' ? '🔔 ACTIVATED' : '🔕 SILENT'}</span></div>
+                <div class="dev-info-row"><span class="dev-info-key">Detection Type</span><span class="dev-info-val">${devEsc(det.type || 'None')}</span></div>
+                <div class="dev-info-row"><span class="dev-info-key">Open Alerts</span><span class="dev-info-val">${d.open_alerts || 0}</span></div>
+            </div>`;
+
+        const stColor = d.status === 'CRITICAL' ? '#f87171' : d.status === 'WARNING' ? '#fbbf24' : d.status === 'OFFLINE' ? '#94a3b8' : '#34d399';
+        const teleClass = d.status === 'ONLINE' ? 'safe-t' : d.status === 'WARNING' ? 'warn-t' : 'alert-t';
+        document.getElementById('devTelemetryGrid').innerHTML = `
+            <div class="dev-tele-card ${teleClass}"><div><div class="dev-tele-label">Detection</div><div class="dev-tele-main" style="color:${stColor}">${devEsc(det.value)}</div><div class="dev-tele-sub" style="color:${stColor}">${devEsc(det.detail)}</div></div></div>
+            <div class="dev-tele-card ${sq.feed === 'Feed Active' ? 'safe-t' : 'alert-t'}"><div><div class="dev-tele-label">Stream Quality</div><div class="dev-tele-main">${devEsc(sq.label)}</div><div class="dev-tele-sub dev-ok">${devEsc(sq.feed)}</div></div></div>
+            <div class="dev-tele-card ${rec.label === 'REC' ? 'safe-t' : 'alert-t'}"><div><div class="dev-tele-label">Recording</div><div class="dev-tele-main">${devEsc(rec.text)}</div></div></div>
+            <div class="dev-tele-card"><div><div class="dev-tele-label">Network Signal</div><div class="dev-tele-main">${devEsc(sig.pct + '%')}</div><div class="dev-tele-sub">${devEsc(sig.dbm)}</div></div></div>
+            <div class="dev-tele-card ${d.alert_output === 'ON' ? 'alert-t' : ''}"><div><div class="dev-tele-label">Alert Output</div><div class="dev-tele-main" style="color:${d.alert_output === 'ON' ? '#f87171' : '#64748b'}">${d.alert_output === 'ON' ? 'Activated' : 'Silent'}</div></div></div>`;
+
+        document.getElementById('devControlPanel').innerHTML = `
+            <div class="dev-info-title">Camera Controls</div>
+            <button type="button" class="dev-ctrl-btn" onclick="window.open('/','_blank')">📺 Open Live Feed</button>
+            <button type="button" class="dev-ctrl-btn" onclick="window.open('${devEsc(d.snapshot_url)}','_blank')">📸 Capture Snapshot</button>
+            <button type="button" class="dev-ctrl-btn" onclick="window.open('/plant-map','_blank')">🗺 View on Plant Map</button>
+            <button type="button" class="dev-ctrl-btn" onclick="window.open('/alerts','_blank')">🔔 View Alerts</button>
+            <button type="button" class="dev-ctrl-btn" onclick="window.open('/ai-config','_blank')">🤖 AI Features Config</button>`;
+
+        const alerts = d.recent_alerts || [];
+        document.getElementById('devHistoryPanel').innerHTML = `
+            <div class="dev-info-title">Recent Alert Events</div>
+            ${alerts.length ? `<table class="dev-table" style="min-width:0"><thead><tr><th>Time</th><th>Event</th><th>Severity</th><th>Status</th></tr></thead><tbody>
+            ${alerts.map(a => `<tr><td>${devEsc(a.time)}</td><td>${devEsc(a.event)}</td><td><span class="dev-badge ${devBadgeClass(a.severity)}">${devEsc(a.severity)}</span></td><td>${devEsc(a.status)}</td></tr>`).join('')}
+            </tbody></table>` : '<p style="color:#64748b;font-size:0.82rem;padding:8px 0">No alert events recorded for this camera.</p>'}`;
+
+        const models = d.ai_models || [];
+        document.getElementById('devModelPanel').innerHTML = `
+            <div class="dev-info-title">AI Model Information</div>
+            <div class="dev-info-row"><span class="dev-info-key">Active Tasks</span><span class="dev-info-val">${devEsc(d.ai_tasks || 'None')}</span></div>
+            ${models.map(m => `<div class="dev-info-row"><span class="dev-info-key">${devEsc(m.name)}</span><span class="dev-info-val dev-ok">${devEsc(m.status || 'Active')}</span></div>`).join('')}
+            ${!models.length ? '<div class="dev-info-row"><span class="dev-info-val dev-na">No AI detection enabled — configure in AI Features</span></div>' : ''}`;
+        switchDevTab('identity');
+    }
+
+    function backToDeviceList() {
+        document.getElementById('devDetailView').style.display = 'none';
+        document.getElementById('devListView').style.display = '';
+        devCurrentId = null;
+    }
+
+    function switchDevTab(tab) {
+        document.querySelectorAll('.dev-tab').forEach(t => t.classList.toggle('active', t.dataset.devTab === tab));
+        document.querySelectorAll('.dev-det-page').forEach(p => p.classList.toggle('active', p.id === 'devTab-' + tab));
+    }
+
+    document.getElementById('devBackBtn').addEventListener('click', backToDeviceList);
+    document.getElementById('devBcLink').addEventListener('click', backToDeviceList);
+    document.getElementById('devRefreshBtn').addEventListener('click', loadDevices);
+    document.getElementById('devSearch').addEventListener('input', renderDevTable);
+    document.getElementById('devZoneFilter').addEventListener('change', renderDevTable);
+    document.querySelectorAll('.dev-tab').forEach(tab => {
+        tab.addEventListener('click', () => switchDevTab(tab.dataset.devTab));
+    });
+
+    /* Local settings */
+    let localData = {};
+
+    function radioRow(label, name, options, val) {
+        const opts = options.map(o =>
+            `<label><input type="radio" name="${name}" value="${o.v}" ${val === o.v ? 'checked' : ''}> ${o.l}</label>`).join('');
+        return `<div class="local-row"><label>${label}</label><div class="radios">${opts}</div></div>`;
+    }
+
+    function textRow(label, name, val, type) {
+        const t = type || 'text';
+        return `<div class="local-row"><label>${label}</label><input type="${t}" data-k="${name}" value="${escapeHtml(val || '')}"></div>`;
+    }
+
+    function emailPasswordRow(label, name, passwordSet) {
+        const hint = passwordSet
+            ? '<div class="hint">App password saved. Leave blank to keep the current password.</div>'
+            : '<div class="hint">Use a Gmail App Password if sending through Gmail SMTP.</div>';
+        return `<div class="local-row"><label>${label}</label><div><input type="password" data-k="${name}" value="" autocomplete="new-password" placeholder="${passwordSet ? '••••••••' : ''}">${hint}</div></div>`;
+    }
+
+    function cbRow(label, items) {
+        const opts = items.map(it =>
+            `<label><input type="checkbox" data-k="${it.k}" ${it.c ? 'checked' : ''}> ${it.l}</label>`).join('');
+        return `<div class="local-row"><label>${label}</label><div class="radios">${opts}</div></div>`;
+    }
+
+    function renderLocalForm(d) {
+        const lv = d.live_view || {};
+        document.getElementById('localLive').innerHTML =
+            radioRow('Protocol', 'lv_proto', [{ v: 'tcp', l: 'TCP' }, { v: 'udp', l: 'UDP' }, { v: 'multicast', l: 'MULTICAST' }, { v: 'http', l: 'HTTP' }], lv.protocol || 'tcp') +
+            radioRow('Stream Type', 'lv_stream', [{ v: 'main', l: 'Main Stream' }, { v: 'sub', l: 'Sub-Stream' }], lv.stream_type || 'main') +
+            radioRow('Play Performance', 'lv_perf', [{ v: 'shortest', l: 'Shortest Delay' }, { v: 'balanced', l: 'Balanced' }, { v: 'fluent', l: 'Fluent' }], lv.play_performance || 'balanced') +
+            radioRow('Rules', 'lv_rules', [{ v: 'enable', l: 'Enable' }, { v: 'disable', l: 'Disable' }], lv.rules || 'disable') +
+            radioRow('POS/OSD Overlay', 'lv_pos', [{ v: 'enable', l: 'Enable' }, { v: 'disable', l: 'Disable' }], lv.pos_osd || 'disable') +
+            radioRow('Image Size', 'lv_size', [{ v: 'autofill', l: 'Auto-fill' }, { v: '43', l: '4:3' }, { v: '169', l: '16:9' }], lv.image_size || 'autofill') +
+            radioRow('Auto Start Live View', 'lv_autostart', [{ v: 'yes', l: 'Yes' }, { v: 'no', l: 'No' }], lv.auto_start_live || 'no') +
+            radioRow('Image Format', 'lv_fmt', [{ v: 'jpeg', l: 'JPEG' }, { v: 'bmp', l: 'BMP' }], lv.image_format || 'jpeg') +
+            textRow('Encryption Key', 'lv_enc', lv.encryption_key || '') +
+            cbRow('Display Fire Source Info.', [
+                { k: 'fire_frame_point', l: 'Frame Fire Point', c: lv.fire_frame_point },
+                { k: 'fire_display_point', l: 'Display Fire Point', c: lv.fire_display_point },
+                { k: 'fire_display_highest', l: 'Display Highest Temp', c: lv.fire_display_highest },
+                { k: 'fire_locate_highest', l: 'Locate Highest Temp', c: lv.fire_locate_highest }
+            ]) +
+            radioRow('Display Temperature Info.', 'lv_temp', [{ v: 'enable', l: 'Enable' }, { v: 'disable', l: 'Disable' }], lv.temperature_info || 'disable');
+
+        const rf = d.record_files || {};
+        document.getElementById('localRec').innerHTML =
+            radioRow('Record File Size', 'rf_size', [{ v: '256m', l: '256M' }, { v: '512m', l: '512M' }, { v: '1g', l: '1G' }], rf.file_size || '512m') +
+            textRow('Save record files to', 'rf_rec', rf.record_path || '') +
+            textRow('Save downloaded files to', 'rf_dl', rf.download_path || '');
+
+        const pc = d.picture_clip || {};
+        document.getElementById('localPic').innerHTML =
+            textRow('Save snapshots in live view to', 'pc_live', pc.snapshot_live || '') +
+            textRow('Save snapshots when playback to', 'pc_pb', pc.snapshot_playback || '') +
+            textRow('Save clips to', 'pc_clips', pc.clips || '');
+
+        const em = d.email_alerts || {};
+        document.getElementById('localEmail').innerHTML =
+            cbRow('Send alerts through email', [
+                { k: 'email_enabled', l: 'Enable email alerts', c: !!em.enabled }
+            ]) +
+            textRow('Sender email', 'em_sender', em.sender_email || '', 'email') +
+            emailPasswordRow('App password', 'em_password', !!em.password_set) +
+            textRow('SMTP host', 'em_smtp_host', em.smtp_host || 'smtp.gmail.com') +
+            textRow('SMTP port', 'em_smtp_port', String(em.smtp_port || 587), 'number') +
+            '<div class="hint" style="margin:0 0 12px 0">Receiver emails are taken from Response Engineers below. Subject and body are set automatically when you assign an alert.</div>' +
+            '<div class="local-row"><label></label><button type="button" class="btn-test-email" id="emailTestBtn">Send test email</button></div>';
+
+        renderEngineersTable(d.engineers || []);
+    }
+
+    function renderEngineersTable(engineers) {
+        const host = document.getElementById('localEngineers');
+        if (!host) return;
+        const rows = (engineers.length ? engineers : [{ id: '', name: '', role: '', phone: '', email: '' }]).map((e, i) => `
+            <tr data-idx="${i}" data-eid="${(e.id || '').replace(/"/g, '&quot;')}">
+                <td><input type="text" data-ef="name" value="${(e.name || '').replace(/"/g, '&quot;')}" placeholder="Engineer name"></td>
+                <td><input type="text" data-ef="role" value="${(e.role || '').replace(/"/g, '&quot;')}" placeholder="Role"></td>
+                <td><input type="text" data-ef="phone" value="${(e.phone || '').replace(/"/g, '&quot;')}" placeholder="Phone"></td>
+                <td><input type="email" data-ef="email" value="${(e.email || '').replace(/"/g, '&quot;')}" placeholder="Email"></td>
+                <td><button type="button" class="btn-eng-del" data-del-eng="${i}">Remove</button></td>
+            </tr>
+        `).join('');
+        host.innerHTML = `
+            <table class="eng-table">
+                <thead><tr><th>Name</th><th>Role</th><th>Phone</th><th>Email</th><th></th></tr></thead>
+                <tbody id="engRows">${rows}</tbody>
+            </table>
+            <button type="button" class="btn-eng-add" id="engAddBtn">+ Add engineer</button>
+        `;
+    }
+
+    function gatherEngineers() {
+        const out = [];
+        document.querySelectorAll('#engRows tr').forEach((tr, i) => {
+            const eid = (tr.dataset.eid || '').trim() || ('eng_' + Date.now() + '_' + i);
+            const item = { id: eid };
+            tr.querySelectorAll('[data-ef]').forEach(inp => { item[inp.dataset.ef] = inp.value.trim(); });
+            if (item.name) out.push(item);
+        });
+        return out;
+    }
+
+    async function loadLocalSettings() {
+        const r = await fetch('/api/system/local-settings');
+        localData = await r.json();
+        renderLocalForm(localData);
+    }
+
+    function gatherLocalForm() {
+        const g = (name) => (document.querySelector(`input[name="${name}"]:checked`) || {}).value;
+        const tx = (sel) => {
+            const el = document.querySelector(sel);
+            return el ? el.value : '';
+        };
+        const ck = (k) => {
+            const el = document.querySelector(`input[data-k="${k}"]`);
+            return el && el.type === 'checkbox' ? el.checked : false;
+        };
+        return {
+            live_view: {
+                protocol: g('lv_proto') || 'tcp',
+                stream_type: g('lv_stream') || 'main',
+                play_performance: g('lv_perf') || 'balanced',
+                rules: g('lv_rules') || 'disable',
+                pos_osd: g('lv_pos') || 'disable',
+                image_size: g('lv_size') || 'autofill',
+                auto_start_live: g('lv_autostart') || 'no',
+                image_format: g('lv_fmt') || 'jpeg',
+                encryption_key: tx('input[data-k="lv_enc"]'),
+                fire_frame_point: ck('fire_frame_point'),
+                fire_display_point: ck('fire_display_point'),
+                fire_display_highest: ck('fire_display_highest'),
+                fire_locate_highest: ck('fire_locate_highest'),
+                temperature_info: g('lv_temp') || 'disable'
+            },
+            record_files: {
+                file_size: g('rf_size') || '512m',
+                record_path: tx('input[data-k="rf_rec"]'),
+                download_path: tx('input[data-k="rf_dl"]')
+            },
+            picture_clip: {
+                snapshot_live: tx('input[data-k="pc_live"]'),
+                snapshot_playback: tx('input[data-k="pc_pb"]'),
+                clips: tx('input[data-k="pc_clips"]')
+            },
+            email_alerts: {
+                enabled: ck('email_enabled'),
+                sender_email: tx('input[data-k="em_sender"]'),
+                app_password: tx('input[data-k="em_password"]'),
+                smtp_host: tx('input[data-k="em_smtp_host"]') || 'smtp.gmail.com',
+                smtp_port: parseInt(tx('input[data-k="em_smtp_port"]') || '587', 10) || 587
+            },
+            engineers: gatherEngineers()
+        };
+    }
+
+    function gatherEmailAlertsOnly() {
+        return gatherLocalForm().email_alerts;
+    }
+
+    document.getElementById('panel-local').addEventListener('click', async (e) => {
+        if (e.target && e.target.id === 'engAddBtn') {
+            const current = gatherEngineers();
+            current.push({ id: 'eng_' + Date.now(), name: '', role: '', phone: '', email: '' });
+            renderEngineersTable(current);
+            return;
+        }
+        if (e.target && e.target.dataset.delEng !== undefined) {
+            const idx = parseInt(e.target.dataset.delEng, 10);
+            const current = gatherEngineers();
+            if (idx >= 0 && idx < current.length) current.splice(idx, 1);
+            renderEngineersTable(current);
+            return;
+        }
+        if (e.target && e.target.id === 'emailTestBtn') {
+            try {
+                const res = await fetch('/api/system/email-alerts/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email_alerts: gatherEmailAlertsOnly() })
+                });
+                const j = await res.json();
+                if (!res.ok) throw new Error(j.error || 'Test failed');
+                showToast('success', j.message || 'Test email sent');
+            } catch (err) {
+                showToast('error', err.message || 'Test email failed');
+            }
+        }
+    });
+
+    document.getElementById('localSave').addEventListener('click', async () => {
+        try {
+            const body = gatherLocalForm();
+            const res = await fetch('/api/system/local-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const j = await res.json();
+            if (!res.ok) throw new Error(j.error || 'Save failed');
+            showToast('success', 'Local settings saved');
+            await loadLocalSettings();
+        } catch (e) {
+            showToast('error', e.message);
+        }
+    });
+
+</script>
+</body>
+</html>

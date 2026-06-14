@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Map &mdash; Sutek Vision AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+    <link rel="stylesheet" href="/static/brand.css">
+    <style>
+        body { margin: 0; font-family: 'Inter', sans-serif; background: #080d19; color: #e2e8f0; min-height: 100vh; }
+        .wrap { max-width: 1400px; margin: 20px auto; padding: 0 20px 28px; }
+        .hdr { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+        .title { font-size: 1.35rem; font-weight: 700; margin: 0 0 4px; }
+        .sub { color: #94a3b8; margin: 0; font-size: 0.9rem; }
+        button { padding: 9px 14px; border-radius: 8px; border: 0; background: #2563eb; color: #fff; font-weight: 600; cursor: pointer; font-family: inherit; }
+        .legend { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+        .leg-item {
+            display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+            background: rgba(15,23,42,0.85); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px; font-size: 0.82rem; font-weight: 600;
+        }
+        .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 8px currentColor; }
+        .dot.normal { background: #22c55e; color: #22c55e; }
+        .dot.warning { background: #eab308; color: #eab308; }
+        .dot.critical { background: #ef4444; color: #ef4444; }
+        .dot.offline { background: #64748b; color: #64748b; }
+        .leg-count { color: #94a3b8; font-weight: 500; margin-left: 2px; }
+        #map {
+            height: calc(100vh - 220px); min-height: 480px;
+            border-radius: 14px; border: 1px solid rgba(255,255,255,0.08);
+            overflow: hidden; z-index: 1;
+        }
+        .cam-popup { font-family: 'Inter', sans-serif; min-width: 180px; }
+        .cam-popup strong { display: block; margin-bottom: 4px; }
+        .cam-popup .st { font-size: 0.78rem; margin-top: 6px; font-weight: 600; text-transform: uppercase; }
+        .hint { font-size: 0.78rem; color: #64748b; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    {% include 'partials/topbar.html' %}
+
+    <div class="wrap">
+        <div class="hdr">
+            <div>
+                <h1 class="title">Plant Map</h1>
+                <p class="sub">Real-time geospatial view of running cameras across the facility.</p>
+            </div>
+            <button onclick="loadMap()">Refresh</button>
+        </div>
+
+        <div class="legend" id="legend">
+            <div class="leg-item"><span class="dot normal"></span> Normal <span class="leg-count" id="cnt-normal">0</span></div>
+            <div class="leg-item"><span class="dot warning"></span> Warning <span class="leg-count" id="cnt-warning">0</span></div>
+            <div class="leg-item"><span class="dot critical"></span> Critical <span class="leg-count" id="cnt-critical">0</span></div>
+            <div class="leg-item"><span class="dot offline"></span> Offline <span class="leg-count" id="cnt-offline">0</span></div>
+        </div>
+
+        <div id="map"></div>
+        <p class="hint">Cameras without saved coordinates are auto-placed near the plant center. Drag a marker to pin its location permanently.</p>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script>
+        const HEALTH_COLOR = { normal: '#22c55e', warning: '#eab308', critical: '#ef4444', offline: '#64748b' };
+        let map, markerLayer;
+
+        function makeIcon(health) {
+            const c = HEALTH_COLOR[health] || HEALTH_COLOR.offline;
+            return L.divIcon({
+                className: '',
+                html: `<div style="width:16px;height:16px;border-radius:50%;background:${c};border:2px solid #fff;box-shadow:0 0 10px ${c};"></div>`,
+                iconSize: [16, 16],
+                iconAnchor: [8, 8],
+            });
+        }
+
+        function initMap(center) {
+            if (map) return;
+            map = L.map('map').setView([center.lat, center.lng], center.zoom || 16);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+            markerLayer = L.layerGroup().addTo(map);
+        }
+
+        async function saveLocation(cameraId, lat, lng) {
+            await fetch('/api/cameras/' + encodeURIComponent(cameraId) + '/location', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ latitude: lat, longitude: lng })
+            });
+        }
+
+        async function loadMap() {
+            try {
+                const res = await fetch('/api/plant-map');
+                const data = await res.json();
+                const counts = data.counts || {};
+                ['normal', 'warning', 'critical', 'offline'].forEach(k => {
+                    const el = document.getElementById('cnt-' + k);
+                    if (el) el.textContent = counts[k] || 0;
+                });
+
+                initMap(data.center || { lat: 28.6139, lng: 77.2090, zoom: 16 });
+                markerLayer.clearLayers();
+
+                const cams = data.cameras || [];
+                if (!cams.length) return;
+
+                const bounds = [];
+                cams.forEach(cam => {
+                    const lat = cam.latitude, lng = cam.longitude;
+                    bounds.push([lat, lng]);
+                    const marker = L.marker([lat, lng], {
+                        icon: makeIcon(cam.health),
+                        draggable: true,
+                        title: cam.name || cam.camera_id,
+                    });
+                    const det = [];
+                    if (cam.headcount_active) det.push('HC');
+                    if (cam.entryexit_active) det.push('E/E');
+                    if (cam.flapgate_active) det.push('FG');
+                    if (cam.ppe_active) det.push('PPE');
+                    if (cam.fire_smoke_active) det.push('Fire');
+                    marker.bindPopup(`
+                        <div class="cam-popup">
+                            <strong>${cam.name || cam.camera_id}</strong>
+                            <div style="font-size:0.8rem;color:#555">${cam.camera_id}</div>
+                            <div class="st" style="color:${HEALTH_COLOR[cam.health]}">${cam.health}</div>
+                            <div style="font-size:0.78rem;margin-top:4px">Stream: ${cam.stream_status || '—'}</div>
+                            ${det.length ? '<div style="font-size:0.78rem">AI: ' + det.join(', ') + '</div>' : ''}
+                            ${cam.position_default ? '<div style="font-size:0.72rem;color:#888;margin-top:4px">Auto-positioned — drag to save location</div>' : ''}
+                        </div>
+                    `);
+                    marker.on('dragend', async () => {
+                        const p = marker.getLatLng();
+                        await saveLocation(cam.camera_id, p.lat, p.lng);
+                    });
+                    marker.addTo(markerLayer);
+                });
+
+                if (bounds.length === 1) {
+                    map.setView(bounds[0], data.center?.zoom || 16);
+                } else if (bounds.length > 1) {
+                    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 17 });
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        loadMap();
+        setInterval(loadMap, 15000);
+    </script>
+</body>
+</html>

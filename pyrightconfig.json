@@ -1,0 +1,7 @@
+{
+  "pythonVersion": "3.13",
+  "pythonPlatform": "Windows",
+  "venvPath": "C:\\Users\\user\\AppData\\Local\\Programs\\Python",
+  "venv": "Python313",
+  "reportMissingImports": "warning"
+}

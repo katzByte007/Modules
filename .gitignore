@@ -1,0 +1,54 @@
+# Secrets
+.env
+.env.local
+*.pem
+credentials.json
+
+# Runtime / local data
+data/*
+!data/.gitkeep
+!data/autofacedata.csv
+!data/workforce_videos/
+!data/workforce_videos/.gitkeep
+!data/ups_videos/
+!data/ups_videos/.gitkeep
+data/vision_ai.db
+data/vision_ai.db-journal
+*.db-journal
+
+# Large assets — not in git (see ASSETS_SETUP.md)
+models/*.pt
+models/*.onnx
+*.pt
+videos/
+videos.zip
+data/workforce_videos/*.mp4
+data/ups_videos/*.mp4
+data/vision_ai1.db
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+Thumbs.db
+.DS_Store
+
+# VLM / HF caches
+.hf_*/
+hf_qwen2vl_3b_4bit/
+qwen35_model/
+models--google--owlv2-base-patch16-ensemble/
+antelopev2/
+autofacedata/
+
+# TensorRT engines
+*.engine

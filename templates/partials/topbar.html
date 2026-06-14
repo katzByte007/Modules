@@ -1,0 +1,19 @@
+<div class="topbar">
+    <div class="brand">
+        <img src="/static/logo.png" alt="Sutek" title="Sutek — Let's Automate">
+    </div>
+    <div class="nav-right" style="display:flex;align-items:center;gap:16px;">
+        <span class="nav-user">{{ auth_username|e }}
+            <a href="#" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login');return false;">Logout</a></span>
+        <nav>
+            <a href="/" class="{% if request.path == '/' %}active{% endif %}">Cameras</a>
+            <a href="/modules" class="{% if request.path.startswith('/modules') %}active{% endif %}">Module</a>
+            <a href="/ai-config" class="{% if request.path.startswith('/ai-config') or request.path.startswith('/zone-config') or request.path.startswith('/flapgate-zone-config') %}active{% endif %}">AI Features</a>
+            <a href="/dashboard" class="{% if request.path.startswith('/dashboard') %}active{% endif %}">Dashboard</a>
+            <a href="/alerts" class="{% if request.path.startswith('/alerts') %}active{% endif %}">Alerts</a>
+            <a href="/assigned-engineers" class="{% if request.path.startswith('/assigned-engineers') %}active{% endif %}">Assigned Engineers</a>
+            <a href="/plant-map" class="{% if request.path.startswith('/plant-map') %}active{% endif %}">Plant Map</a>
+            <a href="/system" class="{% if request.path.startswith('/system') %}active{% endif %}">System</a>
+        </nav>
+    </div>
+</div>

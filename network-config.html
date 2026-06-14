@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network IP Camera Configuration</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .dialog-container {
+            width: 900px !important;
+            max-width: 98vw;
+        }
+        .dialog-content {
+            padding: 32px 48px !important;
+        }
+        .form-row label, .form-hint, .form-note, .devices-table th, .devices-table td {
+            color: #1A2533 !important;
+            opacity: 1 !important;
+        }
+        input:disabled, label[disabled], .form-hint[disabled], .form-note[disabled] {
+            color: #A0AEC0 !important;
+            opacity: 1 !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="dialog-container">
+        <div class="dialog-header">
+            <h2>Network IP camera configuration</h2>
+            <button id="cancel-btn">Cancel</button>
+        </div>
+        
+        <div class="dialog-content">
+            <div class="device-discovery-section">
+                <div class="form-row">
+                    <button class="btn btn-primary" id="discover-btn">
+                        <i class="fas fa-search"></i> Discover Devices
+                    </button>
+                    <div id="discovery-status" class="form-hint">Click to search for devices on your network</div>
+                </div>
+                
+                <div class="devices-table-container">
+                    <table id="devices-table" class="devices-table">
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>IP</th>
+                                <th>Port</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Model</th>
+                                <th>Make</th>
+                                <th>Operation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Devices will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <form id="network-config-form">
+                <div class="form-section">
+                    <div class="form-row">
+                        <label for="stream-url">RTSP URL</label>
+                        <div class="input-with-button">
+                            <input type="text" id="stream-url" placeholder="rtsp://">
+                            <button type="button" class="btn btn-secondary" id="find-btn">Find/inspect...</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-row">
+                        <label for="skipFrames">Skip Frames:</label>
+                        <input type="number" id="skipFrames" value="6" min="1" max="30">
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-row">
+                        <label for="short-name">Short name</label>
+                        <input type="text" id="short-name" value="Cam1">
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-row double">
+                        <div>
+                            <label for="username">User</label>
+                            <input type="text" id="username" value="admin">
+                        </div>
+                        <div>
+                            <label for="password">Password</label>
+                            <input type="password" id="password" value="Password2025">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Removed Make/Model per requirements -->
+
+                <div class="form-section">
+                    <div class="form-row">
+                        <label for="camera-number">Cam#</label>
+                        <input type="number" id="camera-number" value="1" min="1">
+                        <div class="form-hint">Blank address to search for cameras</div>
+                    </div>
+                </div>
+
+                <!-- Removed Media/RTSP and Discovery/ONVIF ports per requirements -->
+            </form>
+        </div>
+
+        <div class="dialog-buttons">
+            <button type="button" class="btn btn-primary" id="apply-btn">Apply</button>
+            <button type="button" class="btn btn-secondary" id="cancel-btn-2">Cancel</button>
+            <button type="button" class="btn btn-link" id="help-btn">Help</button>
+        </div>
+    </div>
+
+    <script>
+        // Set default values when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        });
+
+        document.getElementById('discover-btn').addEventListener('click', function() {
+            const discoverBtn = this;
+            const statusElement = document.getElementById('discovery-status');
+            
+            discoverBtn.disabled = true;
+            statusElement.textContent = 'Searching for devices on network...';
+            
+            fetch('/scan_network')
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.querySelector('#devices-table tbody');
+                    tableBody.innerHTML = '';
+                    
+                    if (data.status !== 'success' || !data.cameras || data.cameras.length === 0) {
+                        tableBody.innerHTML = `
+                            <tr>
+                                <td colspan="10" class="text-center">No devices found</td>
+                            </tr>
+                        `;
+                        statusElement.textContent = 'No devices found on network';
+                        return;
+                    }
+                    
+                    data.cameras.forEach((device, index) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${device.ip || 'N/A'}</td>
+                            <td>${device.port || '554'}</td>
+                            <td>${device.type || 'IP Camera'}</td>
+                            <td><span class="status-badge online">${device.status || 'Online'}</span></td>
+                            <td>${device.model || 'Generic RTSP'}</td>
+                            <td>${device.make || 'N/A'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-select" data-ip="${device.ip}" 
+                                        data-port="${device.port || '554'}" 
+                                        data-channel="1">
+                                    <i class="fas fa-check"></i> Select
+                                </button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                    
+                    // Add event listeners to select buttons
+                    document.querySelectorAll('.btn-select').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const ip = this.dataset.ip;
+                            // Always use port 554 for RTSP
+                            const port = '554';
+                            // Always use channel 1
+                            const channel = '1';
+                            // Use camera default credentials
+                            const username = '';
+                            const password = '';
+                            
+                            // Use the correct RTSP URL format with fixed values
+                            const rtspUrl = `rtsp://${ip}:${port}/cam/realmonitor?channel=${channel}&subtype=0`;
+                            
+                            document.getElementById('stream-url').value = rtspUrl;
+                            
+                            
+                            statusElement.textContent = `Selected device: ${ip}`;
+                        });
+                    });
+                    
+                    statusElement.textContent = `Found ${data.cameras.length} device(s)`;
+                })
+                .catch(error => {
+                    statusElement.textContent = `Error: ${error.message}`;
+                })
+                .finally(() => {
+                    discoverBtn.disabled = false;
+                });
+        });
+
+        document.getElementById('apply-btn').addEventListener('click', function() {
+            const streamUrl = document.getElementById('stream-url').value.trim();
+            if (!streamUrl) {
+                alert('Please select a device or enter an RTSP URL first');
+                return;
+            }
+            
+            // Enforce user/password presence when not included in URL
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            if ((!streamUrl.includes('@')) && (!username || !password)) {
+                alert('Please provide User and Password or include them in the RTSP URL');
+                return;
+            }
+            // If credentials provided and not in URL, inject them
+            if (!streamUrl.includes('@') && username && password) {
+                const afterProto = streamUrl.replace(/^rtsp:\/\//i, '');
+                streamUrl = `rtsp://${username}:${password}@${afterProto}`;
+            }
+            const configData = {
+                url: streamUrl,
+                shortName: document.getElementById('short-name').value,
+                skipFrames: parseInt(document.getElementById('skipFrames').value),
+                username: username,
+                password: password,
+                cameraNumber: document.getElementById('camera-number').value,
+                timestamp: new Date().toISOString()
+            };
+
+            // Send message to parent window to start RTSP stream with metadata
+            window.parent.postMessage({
+                type: 'add-camera-stream',
+                data: configData
+            }, '*');
+            
+            // Close the dialog
+            window.parent.postMessage({
+                type: 'close-dialog',
+                dialog: 'network-config'
+            }, '*');
+        });
+
+        document.getElementById('cancel-btn').addEventListener('click', function() {
+            window.parent.postMessage({
+                type: 'close-dialog',
+                dialog: 'network-config'
+            }, '*');
+        });
+
+        document.getElementById('cancel-btn-2').addEventListener('click', function() {
+            window.parent.postMessage({
+                type: 'close-dialog',
+                dialog: 'network-config'
+            }, '*');
+        });
+
+        document.getElementById('find-btn').addEventListener('click', function() {
+            const streamUrl = document.getElementById('stream-url').value.trim();
+            if (!streamUrl) {
+                alert('Please enter an RTSP URL first');
+                return;
+            }
+            
+            alert(`Attempting to inspect camera at: ${streamUrl}\n\nThis would validate the connection in a real implementation.`);
+        });
+
+        document.getElementById('help-btn').addEventListener('click', function() {
+            alert('Network Camera Configuration Help:\n\n'
+                + '1. Use "Discover Devices" to find cameras on your network\n'
+                + '2. Select a device from the list to auto-fill the details\n'
+                + '3. Make sure the RTSP URL is correct for your camera model\n'
+                + '4. Enter valid credentials for the camera\n'
+                + '5. Click "Apply" to add the camera to your system');
+        });
+    </script>
+</body>
+</html>

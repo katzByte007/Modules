@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in &mdash; Sutek Vision AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background:
+                radial-gradient(ellipse 900px 520px at 50% -10%, rgba(148, 163, 184, 0.07), transparent 58%),
+                radial-gradient(ellipse 640px 420px at 100% 100%, rgba(100, 116, 139, 0.05), transparent 52%),
+                #000000;
+            color: #e2e8f0;
+            -webkit-font-smoothing: antialiased;
+        }
+        .card {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+            padding: 44px 40px 42px;
+            background:
+                linear-gradient(165deg, rgba(8, 8, 8, 0.98) 0%, rgba(0, 0, 0, 1) 55%, rgba(12, 12, 12, 0.98) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            box-shadow:
+                0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+                0 24px 64px rgba(0, 0, 0, 0.85),
+                0 1px 0 rgba(255, 255, 255, 0.06) inset;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 8%; right: 8%; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(203, 213, 225, 0.28), transparent);
+            pointer-events: none;
+        }
+        .card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(255, 255, 255, 0.035), transparent 55%);
+            pointer-events: none;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            margin-bottom: 28px;
+            position: relative;
+            z-index: 1;
+        }
+        .brand-mark {
+            flex-shrink: 0;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            background: #ffffff;
+            padding: 6px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .brand-mark img {
+            height: 48px;
+            width: auto;
+            max-width: 220px;
+            min-width: 140px;
+            display: block;
+            object-fit: contain;
+            object-position: left center;
+        }
+        h1 {
+            font-size: 1.35em;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #f1f5f9;
+            position: relative;
+            z-index: 1;
+        }
+        .sub {
+            font-size: 0.85em;
+            color: #64748b;
+            margin-bottom: 28px;
+            position: relative;
+            z-index: 1;
+        }
+        label {
+            display: block;
+            font-size: 0.72em;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 8px;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.04);
+            color: #f1f5f9;
+            font-size: 0.95em;
+            font-family: inherit;
+            margin-bottom: 18px;
+            position: relative;
+            z-index: 1;
+        }
+        input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+        }
+        .btn {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 11px;
+            font-weight: 600;
+            font-size: 0.95em;
+            font-family: inherit;
+            cursor: pointer;
+            background: linear-gradient(145deg, #e2e8f0, #cbd5e1);
+            color: #0a0a0a;
+            margin-top: 8px;
+            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+            position: relative;
+            z-index: 1;
+        }
+        .btn:hover {
+            background: linear-gradient(145deg, #f8fafc, #e2e8f0);
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+        }
+        .btn:active { transform: scale(0.99); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .err {
+            font-size: 0.85em;
+            color: #f87171;
+            margin-bottom: 12px;
+            display: none;
+        }
+        .err.show { display: block; }
+    </style>
+</head>
+<body>
+<div id="login-page-config" data-next="{{ next|e }}" hidden></div>
+<div class="card">
+    <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><img src="/static/logo.png" alt="Sutek" title="Sutek — Let's Automate"></div>
+    </div>
+    <h1>Sign in</h1>
+    <p class="sub">Enter your username and password to continue.</p>
+    <div class="err" id="err"></div>
+    <form id="f" style="position:relative;z-index:1;">
+        <label for="u">Username</label>
+        <input type="text" id="u" name="username" autocomplete="username" required>
+        <label for="p">Password</label>
+        <input type="password" id="p" name="password" autocomplete="current-password" required>
+        <button type="submit" class="btn" id="go">Sign in</button>
+    </form>
+</div>
+<script>
+const nextHref = document.getElementById('login-page-config').dataset.next || '/';
+document.getElementById('f').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const err = document.getElementById('err');
+    const go = document.getElementById('go');
+    err.classList.remove('show');
+    go.disabled = true;
+    try {
+        const r = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: document.getElementById('u').value.trim(),
+                password: document.getElementById('p').value
+            })
+        });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || 'Login failed');
+        window.location.href = nextHref || '/';
+    } catch (x) {
+        err.textContent = x.message || 'Login failed';
+        err.classList.add('show');
+    }
+    go.disabled = false;
+});
+</script>
+</body>
+</html>

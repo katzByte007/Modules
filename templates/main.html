@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vision AI Platform &mdash; Sutek</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/brand.css">
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #080d19;
+            color: #e2e8f0;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ─── PAGE BODY ─── */
+        .page-body { padding: 28px 40px; max-width: 1920px; margin: 0 auto; }
+
+        /* ─── ADD CAMERA PANEL (hidden — configure cameras in System) ─── */
+        .add-panel { display: none !important; }
+        .btn {
+            padding: 11px 24px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.88em;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: 0.2px;
+        }
+        .btn-primary {
+            background: #3b82f6;
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+        }
+        .btn-primary:hover {
+            background: #2563eb;
+            box-shadow: 0 4px 16px rgba(59,130,246,0.4);
+            transform: translateY(-1px);
+        }
+
+        /* ─── GRID CONTROLS ─── */
+        .grid-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .grid-controls h2 {
+            font-size: 1.05em;
+            font-weight: 600;
+            color: #94a3b8;
+            letter-spacing: 0.3px;
+        }
+        .grid-toggle { display: flex; gap: 2px; background: rgba(255,255,255,0.04); border-radius: 10px; padding: 3px; }
+        .grid-toggle button {
+            background: transparent;
+            border: none;
+            color: #64748b;
+            padding: 7px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.82em;
+            font-weight: 600;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .grid-toggle button.active {
+            background: rgba(59,130,246,0.15);
+            color: #3b82f6;
+        }
+
+        /* ─── CAMERA GRID ─── */
+        .camera-grid {
+            display: grid;
+            gap: 16px;
+            transition: all 0.3s ease;
+        }
+        .camera-grid.g2 { grid-template-columns: repeat(2, 1fr); }
+        .camera-grid.g3 { grid-template-columns: repeat(3, 1fr); }
+        .camera-grid.g4 { grid-template-columns: repeat(4, 1fr); }
+
+        .cam-card {
+            background: linear-gradient(180deg, rgba(15,23,42,0.9) 0%, rgba(15,23,42,0.95) 100%);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.25s ease;
+        }
+        .cam-card:hover {
+            border-color: rgba(59,130,246,0.2);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            transform: translateY(-2px);
+        }
+        .cam-feed {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #060a14;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .cam-feed img { width: 100%; height: 100%; object-fit: contain; }
+        .cam-feed .placeholder {
+            color: #334155;
+            font-size: 0.85em;
+            font-weight: 500;
+            text-align: center;
+        }
+        .cam-info {
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid rgba(255,255,255,0.04);
+        }
+        .cam-name { font-weight: 600; font-size: 0.9em; color: #e2e8f0; }
+        .cam-badges { display: flex; gap: 6px; align-items: center; }
+        .badge {
+            font-size: 0.68em;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-active { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
+        .badge-hc { background: rgba(59,130,246,0.12); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); }
+        .badge-ee { background: rgba(168,85,247,0.12); color: #c084fc; border: 1px solid rgba(168,85,247,0.2); }
+        .badge-fg { background: rgba(249,115,22,0.12); color: #fb923c; border: 1px solid rgba(249,115,22,0.2); }
+        .badge-ppe { background: rgba(20,184,166,0.12); color: #2dd4bf; border: 1px solid rgba(20,184,166,0.2); }
+        .badge-beta { background: rgba(236,72,153,0.12); color: #f472b6; border: 1px solid rgba(236,72,153,0.2); }
+        .badge-offline { background: rgba(100,116,139,0.1); color: #64748b; border: 1px solid rgba(100,116,139,0.15); }
+        .cam-status {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            z-index: 2;
+        }
+        .cam-status.live {
+            background: #22c55e;
+            box-shadow: 0 0 8px rgba(34,197,94,0.6);
+            animation: pulse-live 2s infinite;
+        }
+        .cam-status.offline { background: #475569; }
+        @keyframes pulse-live {
+            0%, 100% { box-shadow: 0 0 8px rgba(34,197,94,0.6); }
+            50% { box-shadow: 0 0 16px rgba(34,197,94,0.8); }
+        }
+        .cam-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 2;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .cam-card:hover .cam-actions { opacity: 1; }
+        .cam-actions button {
+            background: rgba(0,0,0,0.65);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #e2e8f0;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.72em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+        .cam-actions button:hover { background: rgba(239,68,68,0.8); border-color: rgba(239,68,68,0.4); }
+
+        .empty-state {
+            text-align: center;
+            padding: 100px 20px;
+            color: #475569;
+            grid-column: 1 / -1;
+        }
+        .empty-state h3 { font-size: 1.2em; font-weight: 600; margin-bottom: 8px; color: #64748b; }
+        .empty-state p { font-size: 0.9em; }
+
+        @media (max-width: 1100px) {
+            .camera-grid.g4 { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 900px) {
+            .camera-grid.g3, .camera-grid.g4 { grid-template-columns: repeat(2, 1fr); }
+            .page-body { padding: 20px; }
+            .topbar { padding: 0 20px; }
+        }
+        @media (max-width: 600px) {
+            .camera-grid { grid-template-columns: 1fr !important; }
+            .add-panel { flex-direction: column; align-items: stretch; }
+            .add-panel input { min-width: unset; }
+        }
+    </style>
+</head>
+<body>
+    {% include 'partials/topbar.html' %}
+
+    <div class="page-body">
+        <div class="add-panel">
+            <div class="field">
+                <label>Camera Name</label>
+                <input type="text" id="camName" placeholder="e.g. Front Door">
+            </div>
+            <div class="field">
+                <label>RTSP URL</label>
+                <input type="text" id="camUrl" placeholder="rtsp://192.168.1.100:554/stream" style="min-width:380px">
+            </div>
+            <div class="field">
+                <label>Camera ID (optional)</label>
+                <input type="text" id="camId" placeholder="auto-generated">
+            </div>
+            <button class="btn btn-primary" onclick="addCamera()">+ Add Camera</button>
+        </div>
+
+        <div class="grid-controls">
+            <h2 id="camCount">0 Cameras</h2>
+            <div class="grid-toggle">
+                <button onclick="setGrid(2)" id="g2">2 &times; 2</button>
+                <button onclick="setGrid(3)" id="g3" class="active">3 &times; 3</button>
+                <button onclick="setGrid(4)" id="g4">4 &times; 4</button>
+            </div>
+        </div>
+
+        <div class="camera-grid g3" id="cameraGrid">
+            <div class="empty-state">
+                <h3>No cameras configured</h3>
+                <p>Add cameras from System → Camera &amp; network</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let cameras = [];
+        let currentGrid = 3;
+
+        function setGrid(n) {
+            currentGrid = n;
+            const grid = document.getElementById('cameraGrid');
+            grid.className = 'camera-grid g' + n;
+            document.querySelectorAll('.grid-toggle button').forEach(b => b.classList.remove('active'));
+            document.getElementById('g' + n).classList.add('active');
+        }
+
+        async function loadCameras() {
+            try {
+                const res = await fetch('/api/cameras');
+                cameras = await res.json();
+                renderGrid();
+            } catch (e) {
+                console.error('Failed to load cameras:', e);
+            }
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('cameraGrid');
+            document.getElementById('camCount').textContent = cameras.length + ' Camera' + (cameras.length !== 1 ? 's' : '');
+
+            if (cameras.length === 0) {
+                grid.innerHTML = '<div class="empty-state"><h3>No cameras configured</h3><p>Add cameras from System → Camera &amp; network</p></div>';
+                return;
+            }
+
+            grid.innerHTML = cameras.map(cam => {
+                const isLive = cam.status === 'active';
+                let badges = '';
+                if (cam.headcount_active) badges += '<span class="badge badge-hc">HC</span>';
+                if (cam.entryexit_active) badges += '<span class="badge badge-ee">E/E</span>';
+                if (cam.flapgate_active) badges += '<span class="badge badge-fg">FG</span>';
+                if (cam.ppe_active) badges += '<span class="badge badge-ppe">PPE</span>';
+                if (cam.beta_active) badges += '<span class="badge badge-beta">Beta</span>';
+                if (!cam.headcount_active && !cam.entryexit_active && !cam.flapgate_active && !cam.ppe_active && !cam.beta_active) badges += '<span class="badge badge-offline">No AI</span>';
+
+                const snapUrl = '/api/feed_snapshot/' + cam.camera_id;
+
+                return `
+                <div class="cam-card">
+                    <div class="cam-feed">
+                        <div class="cam-status ${isLive ? 'live' : 'offline'}"></div>
+                        <div class="cam-actions">
+                            <button onclick="removeCamera('${cam.camera_id}')" title="Remove camera">&#10005;</button>
+                        </div>
+                        ${isLive
+                            ? `<img class="poll-feed" data-url="${snapUrl}" alt="${cam.name}" src="${snapUrl}?_=0"><div class="placeholder" style="display:none">Feed unavailable</div>`
+                            : '<div class="placeholder">Connecting...</div>'}
+                    </div>
+                    <div class="cam-info">
+                        <span class="cam-name">${cam.name || cam.camera_id}</span>
+                        <div class="cam-badges">
+                            ${badges}
+                            <span class="badge ${isLive ? 'badge-active' : 'badge-offline'}">${cam.status}</span>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            startFeedPolling();
+        }
+
+        /* ── Snapshot polling with concurrency limiter ── */
+        const MAX_CONCURRENT = 4;
+        let pollActive = 0;
+        let pollTimer = null;
+
+        function startFeedPolling() {
+            if (pollTimer) clearTimeout(pollTimer);
+            pollRound();
+        }
+
+        function pollRound() {
+            const imgs = document.querySelectorAll('.poll-feed');
+            if (imgs.length === 0) { pollTimer = setTimeout(pollRound, 500); return; }
+
+            let idx = 0;
+            pollActive = 0;
+
+            function next() {
+                while (pollActive < MAX_CONCURRENT && idx < imgs.length) {
+                    pollOne(imgs[idx++]);
+                }
+                if (idx >= imgs.length && pollActive === 0) {
+                    pollTimer = setTimeout(pollRound, 50);
+                }
+            }
+
+            function pollOne(img) {
+                const url = img.dataset.url;
+                if (!url || !document.body.contains(img)) { next(); return; }
+                pollActive++;
+                fetch(url + '?_=' + Date.now())
+                    .then(r => { if (!r.ok) throw r; return r.blob(); })
+                    .then(blob => {
+                        const old = img.src;
+                        img.src = URL.createObjectURL(blob);
+                        if (old && old.startsWith('blob:')) URL.revokeObjectURL(old);
+                    })
+                    .catch(() => {})
+                    .finally(() => { pollActive--; next(); });
+            }
+
+            next();
+        }
+
+        async function addCamera() {
+            const name = document.getElementById('camName').value.trim();
+            const url = document.getElementById('camUrl').value.trim();
+            const id = document.getElementById('camId').value.trim();
+            if (!url) { alert('Please enter an RTSP URL'); return; }
+
+            const body = { rtsp_url: url };
+            if (name) body.name = name;
+            if (id) body.camera_id = id;
+
+            try {
+                const res = await fetch('/api/cameras', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+                document.getElementById('camName').value = '';
+                document.getElementById('camUrl').value = '';
+                document.getElementById('camId').value = '';
+                loadCameras();
+            } catch (e) {
+                alert('Failed to add camera');
+            }
+        }
+
+        async function removeCamera(cid) {
+            if (!confirm('Remove camera ' + cid + '? This will stop all detections.')) return;
+            try {
+                await fetch('/api/cameras/' + cid, { method: 'DELETE' });
+                loadCameras();
+            } catch (e) {
+                alert('Failed to remove camera');
+            }
+        }
+
+        loadCameras();
+        setInterval(loadCameras, 15000);
+    </script>
+</body>
+</html>

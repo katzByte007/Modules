@@ -1,0 +1,221 @@
+{# module: 'workforce' or 'panel' #}
+<style>
+.module-chat-fab {
+  position: fixed; right: 24px; bottom: 24px; z-index: 9000;
+  width: 56px; height: 56px; border-radius: 50%;
+  border: 1px solid rgba(59, 130, 246, 0.45); cursor: pointer;
+  background: #1e3a5f;
+  color: #e2e8f0; font-size: 22px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+.module-chat-fab:hover {
+  background: #2563eb;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
+  transform: translateY(-1px);
+}
+.module-chat-panel {
+  position: fixed; right: 24px; bottom: 92px; z-index: 9000;
+  width: min(440px, calc(100vw - 40px));
+  height: min(560px, calc(100vh - 120px));
+  background: #0f172a;
+  border: 1px solid rgba(59, 130, 246, 0.28);
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+  display: none; flex-direction: column;
+  overflow: hidden;
+}
+.module-chat-panel.open { display: flex; }
+.module-chat-hdr {
+  padding: 14px 16px;
+  background: #1e293b;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 3px solid #3b82f6;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-shrink: 0;
+}
+.module-chat-hdr-title {
+  font-size: 14px; font-weight: 700; letter-spacing: 0.3px;
+  color: #f1f5f9;
+}
+.module-chat-hdr-sub { font-size: 10px; color: #64748b; margin-top: 3px; font-weight: 500; }
+.module-chat-hdr button {
+  background: transparent; border: 1px solid rgba(255,255,255,0.1);
+  color: #94a3b8; cursor: pointer; font-size: 18px; line-height: 1;
+  width: 30px; height: 30px; border-radius: 6px;
+}
+.module-chat-hdr button:hover { background: rgba(255,255,255,0.06); color: #e2e8f0; }
+.module-chat-msgs {
+  flex: 1; min-height: 0; overflow-y: auto; padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 10px;
+  font-size: 13px; line-height: 1.55;
+  background: #0b1220;
+}
+.module-chat-msg {
+  padding: 10px 13px; border-radius: 8px; max-width: 92%;
+  word-break: break-word; white-space: pre-wrap;
+}
+.module-chat-msg.bot {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  color: #cbd5e1; align-self: flex-start;
+}
+.module-chat-msg.user {
+  background: rgba(37, 99, 235, 0.18);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #e2e8f0; align-self: flex-end;
+}
+.module-chat-chips {
+  display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 14px 10px;
+  flex-shrink: 0;
+  background: #0f172a;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.module-chat-chip {
+  font-size: 10px; padding: 5px 10px; border-radius: 4px; cursor: pointer;
+  background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8; transition: border-color 0.15s, color 0.15s;
+}
+.module-chat-chip:hover {
+  border-color: rgba(59, 130, 246, 0.45);
+  color: #cbd5e1;
+}
+.module-chat-input-row {
+  display: flex; gap: 8px; padding: 12px 14px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+  background: #0f172a;
+}
+.module-chat-input-row input {
+  flex: 1; padding: 11px 13px; border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #1e293b; color: #e2e8f0; font-size: 13px;
+}
+.module-chat-input-row input::placeholder { color: #64748b; }
+.module-chat-input-row input:focus {
+  outline: none; border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+.module-chat-input-row button {
+  padding: 11px 16px; border-radius: 6px; border: none;
+  background: #2563eb; color: #fff; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.module-chat-input-row button:hover { background: #1d4ed8; }
+.module-chat-input-row button:disabled { opacity: 0.5; cursor: not-allowed; }
+.module-chat-typing {
+  font-size: 11px; color: #64748b; padding: 0 16px 4px; display: none;
+  background: #0f172a;
+}
+.module-chat-typing.show { display: block; }
+</style>
+
+<button type="button" class="module-chat-fab" id="moduleChatFab" title="Module Assistant"
+  data-module="{{ module|default('workforce') }}">💬</button>
+<div class="module-chat-panel" id="moduleChatPanel">
+  <div class="module-chat-hdr">
+    <div>
+      <div class="module-chat-hdr-title">Module Assistant</div>
+      <div class="module-chat-hdr-sub" id="moduleChatSub">Dashboard data · vision_ai.db</div>
+    </div>
+    <button type="button" id="moduleChatClose" aria-label="Close">×</button>
+  </div>
+  <div class="module-chat-msgs" id="moduleChatMsgs"></div>
+  <div class="module-chat-typing" id="moduleChatTyping">Processing…</div>
+  <div class="module-chat-chips" id="moduleChatChips"></div>
+  <div class="module-chat-input-row">
+    <input type="text" id="moduleChatInput" placeholder="Ask about alerts, status, or KPIs…" autocomplete="off">
+    <button type="button" id="moduleChatSend">Send</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  const fab = document.getElementById('moduleChatFab');
+  const MODULE = (fab && fab.dataset.module) || 'workforce';
+  const panel = document.getElementById('moduleChatPanel');
+  const msgs = document.getElementById('moduleChatMsgs');
+  const input = document.getElementById('moduleChatInput');
+  const sendBtn = document.getElementById('moduleChatSend');
+  const closeBtn = document.getElementById('moduleChatClose');
+  const chipsEl = document.getElementById('moduleChatChips');
+  const typingEl = document.getElementById('moduleChatTyping');
+  const subEl = document.getElementById('moduleChatSub');
+
+  const SUGGESTIONS = MODULE === 'panel'
+    ? ['Panel status', 'AC voltage', 'past 1 hr what alerts generated', 'recent events']
+    : ['machine 1 status', 'machine 1 past 1 hr what alerts generated', 'how many manned', 'ppe compliance'];
+
+  if (subEl) {
+    subEl.textContent = MODULE === 'panel' ? 'Panel module · vision_ai.db' : 'Workforce module · vision_ai.db';
+  }
+
+  function addMsg(text, who) {
+    const d = document.createElement('div');
+    d.className = 'module-chat-msg ' + who;
+    d.textContent = text;
+    msgs.appendChild(d);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  const welcome = MODULE === 'panel'
+    ? 'Ask about panel status, meter readings, alerts, or recent events.\nExample: "past 1 hr what alerts generated"'
+    : 'Ask about machine status, alerts, manpower, or PPE compliance.\nExample: "machine 1 past 1 hr what alerts generated"';
+  addMsg(welcome, 'bot');
+
+  chipsEl.innerHTML = SUGGESTIONS.map(s =>
+    `<button type="button" class="module-chat-chip" data-q="${s.replace(/"/g, '&quot;')}">${s}</button>`
+  ).join('');
+  chipsEl.addEventListener('click', (e) => {
+    const chip = e.target.closest('.module-chat-chip');
+    if (!chip) return;
+    input.value = chip.dataset.q || '';
+    sendQuestion();
+  });
+
+  fab.addEventListener('click', () => {
+    panel.classList.toggle('open');
+    if (panel.classList.contains('open')) input.focus();
+  });
+  closeBtn.addEventListener('click', () => panel.classList.remove('open'));
+
+  async function sendQuestion() {
+    const q = (input.value || '').trim();
+    if (!q) return;
+    addMsg(q, 'user');
+    input.value = '';
+    sendBtn.disabled = true;
+    typingEl.classList.add('show');
+    try {
+      const res = await fetch('/api/module-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ module: MODULE, question: q })
+      });
+      const raw = await res.text();
+      let data = {};
+      try { data = raw ? JSON.parse(raw) : {}; } catch (_) {
+        addMsg('Server returned an invalid response (status ' + res.status + '). Restart the app and try again.', 'bot');
+        return;
+      }
+      if (!res.ok) {
+        addMsg(data.error || ('Request failed (' + res.status + ')'), 'bot');
+        return;
+      }
+      addMsg(data.answer || data.error || 'No response.', 'bot');
+    } catch (e) {
+      addMsg('Could not reach assistant. Check that the app is running and refresh the page.', 'bot');
+    } finally {
+      sendBtn.disabled = false;
+      typingEl.classList.remove('show');
+      input.focus();
+    }
+  }
+
+  sendBtn.addEventListener('click', sendQuestion);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); sendQuestion(); }
+  });
+})();
+</script>
