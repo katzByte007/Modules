@@ -1,48 +1,67 @@
-# Dashboardmodule
+# Modules
 
-Sutek Vision AI dashboard with Workforce Monitoring, Panel module, unified analytics, module assistant chatbot, and live video feeds.
+Lightweight **Sutek Vision** deployment for **PythonAnywhere** (low disk). Focus:
 
-## Quick start (Docker)
+- **Login** — `/login`
+- **Modules** — Workforce & Panel dashboards (`/modules`)
+- **Alerts** — `/alerts`
+- **System** — users, email, engineers (`/system`)
+- **SQLite database** — auto-created under `data/vision_ai.db`
 
-See **[DOCKER_README.md](DOCKER_README.md)** for GPU Docker build/run, volumes, and environment variables.
+Other pages (dashboard, AI config, plant map, etc.) ship as **HTML templates only** — no heavy AI stack required.
+
+## PythonAnywhere setup
+
+1. Clone this repo into your PA project folder.
+2. Create a virtualenv and install **minimal** deps (~100 MB):
 
 ```bash
-docker compose build
-docker compose up -d
+pip install --user --no-cache-dir -r requirements_pa.txt
 ```
 
-Open `http://<host>:8080` and sign in.
-
-## Local development
+3. Set environment variables (PA **Web → WSGI** or `.env`):
 
 ```bash
-python -m venv .venv
-.venv\Scripts\activate   # Windows
-pip install -r requirements.txt
-copy .env.example .env   # optional overrides
+VISION_LITE=1
+VISION_SECRET_KEY=change-me-to-a-long-random-string
+```
+
+4. Upload workforce videos manually (optional):
+
+```
+data/workforce_videos/MACHINE-01_....mp4
+...
+```
+
+5. WSGI entry (example):
+
+```python
+import sys
+import os
+path = '/home/YOURUSER/Modules'
+if path not in sys.path:
+    sys.path.insert(0, path)
+os.environ['VISION_LITE'] = '1'
+from app import app as application
+```
+
+6. Reload the web app. Sign in: **admin** / **admin** (change in System → Users).
+
+## What is excluded from git (save disk)
+
+- `requirements.txt`, Docker, model weights (`.pt`), `videos.zip`
+- Runtime DB and uploaded videos
+
+## Local run (lite)
+
+```bash
+pip install -r requirements_pa.txt
+set VISION_LITE=1
 python app.py
 ```
 
-## Project layout
+Open `http://127.0.0.1:PORT/login` then `/modules`.
 
-| Path | Description |
-|------|-------------|
-| `app.py` | Main Flask application |
-| `workforce_monitoring.py` | Workforce live view & playback |
-| `ups_panel_monitoring.py` | Panel module |
-| `module_dashboard_store.py` | Module assistant DB snapshots |
-| `templates/` | Web UI |
-| `static/` | Logo and shared CSS |
-| `models/` | YOLO weights (copy after clone — see ASSETS_SETUP.md) |
-| `data/workforce_videos/` | Workforce demo MP4 feeds (copy after clone) |
-| `data/ups_videos/` | Panel demo videos (copy after clone) |
-| `data/vision_ai.db` | SQLite database (auto-created on first run) |
+## Full AI stack (optional, not for PA free tier)
 
-## Assets (models & videos)
-
-The git repo is **code-only** (~few MB) so it clones on machines with limited disk quota.  
-After clone, copy models and videos from your dev machine — see **[ASSETS_SETUP.md](ASSETS_SETUP.md)**.
-
-## License
-
-Proprietary — internal use unless otherwise specified.
+Install `requirements.txt` + model weights locally or on a GPU server. Unset `VISION_LITE` or set `VISION_LITE=0`.

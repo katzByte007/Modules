@@ -4,27 +4,12 @@
 *.pem
 credentials.json
 
-# Runtime / local data
+# Runtime data (DB created on first run)
 data/*
 !data/.gitkeep
-!data/autofacedata.csv
-!data/workforce_videos/
 !data/workforce_videos/.gitkeep
-!data/ups_videos/
 !data/ups_videos/.gitkeep
-data/vision_ai.db
-data/vision_ai.db-journal
 *.db-journal
-
-# Large assets — not in git (see ASSETS_SETUP.md)
-models/*.pt
-models/*.onnx
-*.pt
-videos/
-videos.zip
-data/workforce_videos/*.mp4
-data/ups_videos/*.mp4
-data/vision_ai1.db
 
 # Python
 __pycache__/
@@ -33,22 +18,34 @@ __pycache__/
 venv/
 .pytest_cache/
 
-# IDE
+# IDE / OS
 .idea/
 .vscode/
-*.swp
-
-# OS
 Thumbs.db
 .DS_Store
 
-# VLM / HF caches
+# Heavy — do not push (PythonAnywhere: upload manually if needed)
+models/
+*.pt
+*.engine
+*.zip
+videos/
+requirements.txt
+
+# Optional AI / dev scripts (not needed for lite deploy)
+stream.py
+modelsoptmize.py
+network_camera_configuration.py
+trialinsightfaceattend_1.py
+ultimatefacedataset_streamlit_2 1.py
+Dockerfile
+docker-compose.yml
+DOCKER_README.md
+ASSETS_SETUP.md
+.gitattributes
+
+# Caches
 .hf_*/
 hf_qwen2vl_3b_4bit/
 qwen35_model/
-models--google--owlv2-base-patch16-ensemble/
-antelopev2/
 autofacedata/
-
-# TensorRT engines
-*.engine

@@ -1,15 +1,49 @@
 import cv2
 import numpy as np
-from ultralytics import YOLO
+import os
+
+# Lite mode for PythonAnywhere / low-disk hosts (modules, alerts, system, login only).
+def _vision_lite_mode():
+    flag = os.environ.get('VISION_LITE', '').strip().lower()
+    if flag in ('1', 'true', 'yes'):
+        return True
+    if flag in ('0', 'false', 'no'):
+        return False
+    try:
+        import ultralytics  # noqa: F401
+        return False
+    except ImportError:
+        return True
+
+VISION_LITE = _vision_lite_mode()
+
+try:
+    from ultralytics import YOLO
+    _YOLO_AVAILABLE = True
+except ImportError:
+    YOLO = None
+    _YOLO_AVAILABLE = False
+
 from collections import defaultdict, deque
 import time
 import logging
-from scipy.optimize import linear_sum_assignment
-from filterpy.kalman import KalmanFilter
+try:
+    from scipy.optimize import linear_sum_assignment
+except ImportError:
+    linear_sum_assignment = None
+try:
+    from filterpy.kalman import KalmanFilter
+except ImportError:
+    KalmanFilter = None
 from flask import Flask, render_template, Response, request, jsonify, session, redirect, url_for, g, send_file
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_socketio import SocketIO
+try:
+    from flask_socketio import SocketIO
+    _SOCKETIO_AVAILABLE = True
+except ImportError:
+    SocketIO = None
+    _SOCKETIO_AVAILABLE = False
 import threading
 import socket
 from contextlib import closing
@@ -17,7 +51,6 @@ import warnings
 import math
 import colorsys
 import sqlite3
-import os
 import json
 import secrets
 from datetime import datetime
@@ -5432,7 +5465,10 @@ fr_collect_states = {}  # session_id -> collection state dict
 app = Flask(__name__)
 _sk = (os.environ.get('VISION_SECRET_KEY') or '').strip()
 app.config['SECRET_KEY'] = _sk if _sk else 'vision-ai-secret-change-me'
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading', logger=False, engineio_logger=False)
+if _SOCKETIO_AVAILABLE:
+    socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading', logger=False, engineio_logger=False)
+else:
+    socketio = None
 
 
 # ---------- Auth (session + roles: admin / user) ----------
@@ -5984,6 +6020,8 @@ _wf_start_status = {}
 
 
 def _get_workforce_models():
+    if not _YOLO_AVAILABLE:
+        raise RuntimeError('YOLO not available (install ultralytics or use VISION_LITE=1 playback-only)')
     global _workforce_person_model, _workforce_ppe_model
     with _workforce_models_lock:
         if _workforce_person_model is None:
@@ -10203,6 +10241,27 @@ def _stats_emitter():
 # ---------- Startup: restore cameras from DB ----------
 
 def restore_from_db():
+    if VISION_LITE:
+        logger.info('VISION_LITE: skipping camera/AI restore; starting module playback only')
+        try:
+            bind_workforce_videos_from_folder(get_db, WORKFORCE_VIDEOS_DIR)
+            ensure_workforce_playback(WORKFORCE_VIDEOS_DIR)
+            logger.info('Workforce playback readers ready')
+        except Exception as e:
+            logger.error(f'Workforce lite restore: {e}')
+        try:
+            start_dashboard_persistence(
+                get_db,
+                _workforce_dashboard_status,
+                get_utilization_chart,
+                get_ppe_stats,
+                lambda: {'panel': get_panel_status('UPS-PANEL-01'), 'summary': ups_get_summary()},
+                ups_get_trend_data,
+            )
+        except Exception as e:
+            logger.error(f'Dashboard persistence: {e}')
+        return
+
     conn = get_db()
     cams = conn.execute("SELECT * FROM cameras WHERE status='active'").fetchall()
     for cam in cams:
@@ -10395,20 +10454,25 @@ if __name__ == '__main__':
     restore_thread = threading.Thread(target=restore_from_db, daemon=True)
     restore_thread.start()
 
-    threading.Thread(target=_preload_workforce_models, daemon=True, name='WF-ModelPreload').start()
+    if not VISION_LITE:
+        threading.Thread(target=_preload_workforce_models, daemon=True, name='WF-ModelPreload').start()
+        if socketio is not None:
+            stats_thread = threading.Thread(target=_stats_emitter, daemon=True)
+            stats_thread.start()
+        try:
+            CUDACacheSteward.start()
+        except Exception:
+            pass
 
-    stats_thread = threading.Thread(target=_stats_emitter, daemon=True)
-    stats_thread.start()
+        def _start_watchdog():
+            time.sleep(5)
+            for eng in _engines.values():
+                watchdog.register(eng)
+            watchdog.start()
 
-    CUDACacheSteward.start()
-
-    def _start_watchdog():
-        time.sleep(5)
-        for eng in _engines.values():
-            watchdog.register(eng)
-        watchdog.start()
-
-    threading.Thread(target=_start_watchdog, daemon=True).start()
+        threading.Thread(target=_start_watchdog, daemon=True).start()
+    else:
+        print('  VISION_LITE=1 — modules, alerts, system, login (no AI detection stack)')
 
     port = int(os.environ['PORT']) if os.environ.get('PORT') else find_free_port()
     host = get_local_ip()
@@ -10416,22 +10480,28 @@ if __name__ == '__main__':
     host_port = os.environ.get('HOST_PORT')
     host_name = os.environ.get('HOST_NAME', 'localhost')
     print(f"\n{'='*55}")
-    print(f"  Resource tuning: imgsz={INFERENCE_IMGSZ} fps={TARGET_FPS} batch={MICRO_BATCH} fp16={USE_FP16} tensorrt={USE_TENSORRT_IF_AVAILABLE} workers={CALLBACK_POOL_WORKERS}")
+    if not VISION_LITE:
+        print(f"  Resource tuning: imgsz={INFERENCE_IMGSZ} fps={TARGET_FPS} batch={MICRO_BATCH} fp16={USE_FP16} tensorrt={USE_TENSORRT_IF_AVAILABLE} workers={CALLBACK_POOL_WORKERS}")
     print(f"  Vision AI Platform running at: {base}")
     if host_port:
         external_base = f"http://{host_name}:{host_port}"
-        print(f"  >>> On this server:  {external_base}/dashboard")
-        print(f"  >>> From another PC: http://<SERVER_IP>:{host_port}/dashboard  (use this machine's IP)")
+        print(f"  >>> On this server:  {external_base}/modules")
+        print(f"  >>> From another PC: http://<SERVER_IP>:{host_port}/modules")
     else:
-        print(f"  Dashboard:   {base}/dashboard")
-    print(f"  AI Config:   {base}/ai-config")
-    print(f"  Sign in:     {base}/login  (default admin user/password from env or admin/admin on first run)")
+        print(f"  Modules:     {base}/modules")
+    print(f"  Alerts:      {base}/alerts")
+    print(f"  System:      {base}/system")
+    print(f"  Sign in:     {base}/login  (default admin/admin on first run)")
     print(f"  Health:      {base}/api/health")
     print(f"  Module chat: {base}/api/module-chat  (POST)")
-    print(f"  System Stats (GPU/CPU/VRAM): {base}/api/system-stats")
+    if not VISION_LITE:
+        print(f"  System Stats (GPU/CPU/VRAM): {base}/api/system-stats")
     if _AUTH_ROUTE_ISSUES:
-        print(f"  WARNING: Auth routes missing: {', '.join(_AUTH_ROUTE_ISSUES)} — rebuild image / redeploy app.py (see log above).")
+        print(f"  WARNING: Auth routes missing: {', '.join(_AUTH_ROUTE_ISSUES)}")
     else:
         print(f"  Auth routes OK: /login, /system, /api/logout")
     print(f"{'='*55}\n")
-    socketio.run(app, debug=False, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True, use_reloader=False)
+    if socketio is not None and not VISION_LITE:
+        socketio.run(app, debug=False, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True, use_reloader=False)
+    else:
+        app.run(debug=False, host='0.0.0.0', port=port, threaded=True, use_reloader=False)

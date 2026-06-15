@@ -1,2 +1,0 @@
-# Large binaries stored as normal git objects (all under GitHub 100 MB limit).
-# If you add files over 100 MB, enable Git LFS for those patterns only.
