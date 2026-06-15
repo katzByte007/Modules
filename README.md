@@ -55,17 +55,25 @@ data/workforce_videos/MACHINE-01_....mp4
 ...
 ```
 
-5. WSGI entry (example):
+5. **WSGI configuration** (Web → your Flask app → WSGI configuration file):
+
+Either set the WSGI file path to `~/Modules/wsgi.py`, **or** replace the default file contents with:
 
 ```python
 import sys
 import os
-path = '/home/YOURUSER/Modules'
-if path not in sys.path:
-    sys.path.insert(0, path)
+
+project_home = '/home/YOURUSERNAME/Modules'   # ← change YOURUSERNAME
+if project_home not in sys.path:
+    sys.path.insert(0, project_home)
+
 os.environ['VISION_LITE'] = '1'
-from app import app as application
+
+from app import app
+application = app
 ```
+
+(`app` is the Flask object from `app.py`; `application` is what uWSGI loads.)
 
 6. Reload the web app. Sign in: **admin** / **admin** (change in System → Users).
 

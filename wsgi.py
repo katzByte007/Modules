@@ -1,4 +1,9 @@
-"""PythonAnywhere WSGI entry — point your PA web app at this file."""
+"""
+PythonAnywhere WSGI entry for a manual Flask web app.
+
+In PA: Web → your app → WSGI configuration file
+Point it at this file, or paste the same imports into the default wsgi file.
+"""
 import os
 import sys
 
@@ -8,4 +13,8 @@ if APP_DIR not in sys.path:
 
 os.environ.setdefault('VISION_LITE', '1')
 
-from app import app as application  # noqa: F401
+# app.py defines: app = Flask(__name__)
+from app import app
+
+# uWSGI on PythonAnywhere also accepts this alias:
+application = app
