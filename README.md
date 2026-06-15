@@ -13,20 +13,42 @@ Other pages (dashboard, AI config, plant map, etc.) ship as **HTML templates onl
 ## PythonAnywhere setup
 
 1. Clone this repo into your PA project folder.
-2. Create a virtualenv and install **minimal** deps (~100 MB):
+2. **Free disk first** (PA free tier fills up quickly):
 
 ```bash
+pip cache purge
+rm -rf ~/.cache/pip
+du -ah ~ | sort -rh | head -15
+```
+
+Remove old virtualenvs or large uploads if needed. **Do not upload workforce MP4s until deps are installed** (videos use extra space).
+
+3. Install deps — pick one:
+
+```bash
+# Full lite (~70 MB) — includes workforce video streaming
+pip install --user --no-cache-dir -r requirements_pa.txt
+
+# OR core only (~25 MB) — login/alerts/system; add opencv later for video
+pip install --user --no-cache-dir -r requirements_pa_core.txt
+```
+
+If a previous install failed mid-way:
+
+```bash
+pip uninstall -y flask werkzeug numpy opencv-python-headless
+pip cache purge
 pip install --user --no-cache-dir -r requirements_pa.txt
 ```
 
-3. Set environment variables (PA **Web → WSGI** or `.env`):
+4. Set environment variables (PA **Web → WSGI** or `.env`):
 
 ```bash
 VISION_LITE=1
 VISION_SECRET_KEY=change-me-to-a-long-random-string
 ```
 
-4. Upload workforce videos manually (optional):
+4. Upload workforce videos manually **after** pip succeeds (optional):
 
 ```
 data/workforce_videos/MACHINE-01_....mp4

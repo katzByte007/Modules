@@ -1,9 +1,10 @@
-# PythonAnywhere / low-disk install — modules, alerts, plant map, system only.
-# Install: pip install --user --no-cache-dir -r requirements_pa.txt
+# PythonAnywhere / low-disk install
+# Step 1 (if disk full): pip cache purge && rm -rf ~/.cache/pip
+# Step 2: pip install --user --no-cache-dir -r requirements_pa.txt
 #
-# ~80–120 MB installed (vs 2+ GB for full requirements.txt with torch/ultralytics).
+# ~70 MB installed. Workforce live video needs opencv (largest package).
 
 flask>=2.3.0,<4
 werkzeug>=2.3.0
 numpy>=1.24.0,<2
-opencv-python-headless==4.8.0.74
+opencv-python-headless==4.8.0.76

@@ -1,5 +1,11 @@
-import cv2
-import numpy as np
+try:
+    import cv2
+    import numpy as np
+    _CV2_AVAILABLE = True
+except ImportError:
+    cv2 = None
+    np = None
+    _CV2_AVAILABLE = False
 import os
 
 # Lite mode for PythonAnywhere / low-disk hosts (modules, alerts, system, login only).
@@ -5705,6 +5711,10 @@ def _gen_fr_collect(session_id):
 def _gen_workforce(machine_id):
     if machine_id not in WORKFORCE_MACHINE_IDS:
         return
+    if not _CV2_AVAILABLE:
+        while True:
+            time.sleep(1.0)
+        return
     if machine_id not in workforce_video_readers:
         path = _resolve_workforce_video_path(machine_id)
         if path:
@@ -6188,6 +6198,8 @@ def api_workforce_enable(machine_id):
 def api_workforce_frame(machine_id):
     if machine_id not in WORKFORCE_MACHINE_IDS:
         return jsonify({'error': 'Invalid machine id'}), 400
+    if not _CV2_AVAILABLE:
+        return jsonify({'error': 'OpenCV not installed — pip install opencv-python-headless'}), 503
     if machine_id not in workforce_video_readers:
         path = _resolve_workforce_video_path(machine_id)
         if path:

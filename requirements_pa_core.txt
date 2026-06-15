@@ -1,0 +1,7 @@
+# Smallest install (~25 MB) — login, alerts, system, module pages (no live video).
+# pip install --user --no-cache-dir -r requirements_pa_core.txt
+# Add video later: pip install --user --no-cache-dir opencv-python-headless==4.8.0.76
+
+flask>=2.3.0,<4
+werkzeug>=2.3.0
+numpy>=1.24.0,<2

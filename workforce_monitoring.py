@@ -8,8 +8,14 @@ import logging
 from datetime import datetime
 from collections import deque
 
-import cv2
-import numpy as np
+try:
+    import cv2
+    import numpy as np
+    _CV2_AVAILABLE = True
+except ImportError:
+    cv2 = None
+    np = None
+    _CV2_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -809,6 +815,9 @@ def start_playback_only(machine_id, video_path):
 
 def ensure_workforce_playback(videos_dir):
     """Start lightweight file readers for all bundled workforce videos."""
+    if not _CV2_AVAILABLE:
+        logger.warning('OpenCV not installed — workforce video playback disabled')
+        return
     for mid in WORKFORCE_MACHINE_IDS:
         path = discover_workforce_video(mid, videos_dir)
         if path:
