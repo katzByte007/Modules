@@ -57,25 +57,28 @@ data/workforce_videos/MACHINE-01_....mp4
 
 5. **WSGI configuration** (Web → your Flask app → WSGI configuration file):
 
-Either set the WSGI file path to `~/Modules/wsgi.py`, **or** replace the default file contents with:
+**Do not use** `from Modules import app` — `Modules` is only the folder name, not a Python module.
+
+Replace the entire WSGI file with (change `kartik2025` if your PA username differs):
 
 ```python
 import sys
 import os
 
-project_home = '/home/YOURUSERNAME/Modules'   # ← change YOURUSERNAME
+project_home = '/home/kartik2025/Modules'
 if project_home not in sys.path:
     sys.path.insert(0, project_home)
 
+os.chdir(project_home)
 os.environ['VISION_LITE'] = '1'
 
 from app import app
 application = app
 ```
 
-(`app` is the Flask object from `app.py`; `application` is what uWSGI loads.)
+Reload the web app. If it still fails, check **Web → Log files → error log**.
 
-6. Reload the web app. Sign in: **admin** / **admin** (change in System → Users).
+6. Sign in: **admin** / **admin** (change in System → Users).
 
 ## What is excluded from git (save disk)
 

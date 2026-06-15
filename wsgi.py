@@ -1,20 +1,21 @@
 """
-PythonAnywhere WSGI entry for a manual Flask web app.
+PythonAnywhere WSGI entry — kartik2025 / Modules repo.
 
-In PA: Web → your app → WSGI configuration file
-Point it at this file, or paste the same imports into the default wsgi file.
+Paste this into Web → WSGI configuration file, or import from here.
 """
-import os
 import sys
+import os
 
-APP_DIR = os.path.dirname(os.path.abspath(__file__))
-if APP_DIR not in sys.path:
-    sys.path.insert(0, APP_DIR)
+# ← Your PA username + clone folder (adjust if different)
+project_home = '/home/kartik2025/Modules'
 
+if project_home not in sys.path:
+    sys.path.insert(0, project_home)
+
+os.chdir(project_home)
 os.environ.setdefault('VISION_LITE', '1')
 
-# app.py defines: app = Flask(__name__)
+# app.py contains: app = Flask(__name__)
 from app import app
 
-# uWSGI on PythonAnywhere also accepts this alias:
 application = app
